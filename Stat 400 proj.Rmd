@@ -1,5 +1,6 @@
 ---
 title: "Stat 400 Project"
+authors: "Nathan Hemenway, Mark Hinds, Ian Hall"
 output: pdf_document
 ---
 
@@ -9,8 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
-
-
 
 incubation_time <- rgamma(5, 6, (2/3))
 crucial_distance <- rexp(5, 1/8)
@@ -71,6 +70,25 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
 }
 
+#S,I,R data
+suceptable = function(){
+  
+}
 
+recovered = function(){
+  
+}
 
+infected = function(){
+  
+}
+
+#reported monte carlo summary data
+qd = c(0,25,50,75)
+pos = c(99.3,99.2,98.7,92.7)
+dncpv = c(69,53,46,33)
+dncpt = c(26,32,43,42)
+r0 = c(1.8,1.73,1.8,1.63)
+mcsum = cbind(qd,pos,dncpv,dncpt,r0)
+colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak value [cases]",	"DNC peaking time [days]",	"R0"))
 ```
