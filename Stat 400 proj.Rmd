@@ -39,26 +39,34 @@ ggplot() +
 df <- as.data.frame(cbind(subjects, start_x, start_y))
 df$subjects <- as.factor(df$subjects)
 
-#create starting positions function
-starting_vals <- function(num_subjects, x_dim, y_dim){
+#create starting positions and state function
+starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
-  start_x <- rep(NA, length(subjects))
-  start_y <- rep(NA, length(subjects))
+  #Storage for x, y starting positions for the subjects
+  start_x <- rep(NA, num_subjects)
+  start_y <- rep(NA, num_subjects)
   
+  #Infect I_0 many starting subjects
+  subjects <- rep('S', num_subjects)
+  infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
+  subjects[infect] <- 'I'
+  
+  #Assign starting positions randomly
   for(i in 1:num_subjects){
   start_x[i] <- runif(n=1, min=0, max=grid_x)
   start_y[i] <- runif(n=1, min=0, max=grid_y)
   }
   
-  return(cbind(start_x, start_y))
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects))
+  colnames(df)[1] <- 'x'
+  colnames(df)[2] <- 'y'
+  return(df)
 }
 
 
 #simulation function
-simulator <- function(days, num_subjects, x_dim, y_dim){
-  subjects <- rep('S', num_subjects)
-  start_coords <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim)
-  starter_data <- cbind(subjects, start_coords)
+simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
   
   
 }
