@@ -14,48 +14,19 @@ library(tidyverse)
 incubation_time <- rgamma(5, 6, (2/3))
 crucial_distance <- rexp(5, 1/8)
 
-#starter subjects vector
-subjects <- rep('S', 100)
-
-#area grid
-grid_x <- 50
-grid_y <- 50
-
-#starting positions
-start_x <- rep(NA, length(subjects))
-start_y <- rep(NA, length(subjects))
-
-for(i in 1:length(subjects)){
-  start_x[i] <- runif(n=1, min=0, max=grid_x)
-  start_y[i] <- runif(n=1, min=0, max=grid_y)
-}
-
-#plot the starting positions
-ggplot() +
-  geom_point(aes(x=start_x, y=start_y))
-
-#Create df of values for infection status, x coordinate, and y coordinate
-df <- as.data.frame(cbind(subjects, start_x, start_y))
-df$subjects <- as.factor(df$subjects)
-
 #create starting positions and state function
 starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
-  
-  #Storage for x, y starting positions for the subjects
-  start_x <- rep(NA, num_subjects)
-  start_y <- rep(NA, num_subjects)
   
   #Infect I_0 many starting subjects
   subjects <- rep('S', num_subjects)
   infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
   subjects[infect] <- 'I'
   
-  #Assign starting positions randomly
-  for(i in 1:num_subjects){
-  start_x[i] <- runif(n=1, min=0, max=x_dim)
-  start_y[i] <- runif(n=1, min=0, max=y_dim)
-  }
+  #Storage for x, y starting positions for the subjects
+  start_x <- runif(n=num_subjects, min=0, max=x_dim)
+  start_y <- runif(n=num_subjects, min=0, max=y_dim)
   
+  #Put into a data frame
   df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
@@ -90,6 +61,19 @@ update_coords <- function(og_df, delta_df){
   return(new_df)
 }
 
+#Function for deciding if infections occured
+infection_status <- function(state){
+  
+  current_infected <- state[state[,'subjects']=='I',]
+  current_suceptable <- state[state[,'subjects']=='S',]
+  current_removed <- state[state[,'subjects']=='R',]
+  
+  #Check to see which suceptable subjects get infected
+  crucial_distance <- rexp(n=nrow(coords), 1/8)
+  
+  #For loop
+}
+
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
@@ -100,6 +84,13 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
   
 }
+
+#Testing
+df <- starting_vals(100, 2, 10, 10)
+len <- get_step_length(df, 10, 10)
+dir <- get_step_direction(len)
+delts <- get_delts(len, dir)
+newdf <- update_coords(df, delts)
 
 #S,I,R data
 suceptable = function(){
