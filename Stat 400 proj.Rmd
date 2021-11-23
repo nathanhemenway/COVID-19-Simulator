@@ -52,8 +52,8 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
   #Assign starting positions randomly
   for(i in 1:num_subjects){
-  start_x[i] <- runif(n=1, min=0, max=grid_x)
-  start_y[i] <- runif(n=1, min=0, max=grid_y)
+  start_x[i] <- runif(n=1, min=0, max=x_dim)
+  start_y[i] <- runif(n=1, min=0, max=y_dim)
   }
   
   df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects))
@@ -78,6 +78,16 @@ get_delts <- function(length_vec, direc_vec){
   delta_x <- length_vec * cos(direc_vec)
   delta_y <- length_vec * sin(direc_vec)
   return(cbind(delta_x, delta_y))
+}
+
+#Function for getting updated coordinates
+update_coords <- function(og_df, delta_df){
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=2)
+  new_df <- data.frame(new_mx)
+  new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
+  new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
+  colnames(new_df) <- c('x', 'y')
+  return(new_df)
 }
 
 #simulation function
