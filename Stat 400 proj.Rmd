@@ -62,16 +62,31 @@ update_coords <- function(og_df, delta_df){
 }
 
 #Function for deciding if infections occured
-infection_status <- function(state){
+infection_status <- function(state, mean_crit_dist){
   
   current_infected <- state[state[,'subjects']=='I',]
   current_suceptable <- state[state[,'subjects']=='S',]
   current_removed <- state[state[,'subjects']=='R',]
   
-  #Check to see which suceptable subjects get infected
-  crucial_distance <- rexp(n=nrow(coords), 1/8)
+  #store new infection status
+  new_status <- rep(NA, nrow(current_suceptable))
   
+  #Check to see which suceptable subjects get infected
   #For loop
+  for(i in 1:nrow(current_infected)){
+    for(j in 1:nrow(current_suceptable)){
+      x_i <- as.numeric(current_infected[i, 'x'])
+      y_i <- as.numeric(current_infected[i, 'y'])
+      x_s <- as.numeric(current_suceptable[j, 'x'])
+      y_s <- as.numeric(current_suceptable[j, 'y'])
+      crucial_distance <- rexp(1, 1/mean_crit_dist)
+      d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
+      if(d <= crucial_distance){
+        new_status[j] <- 'I'
+      }else{new_status[j] <- 'S'}
+    }
+  }
+  return(new_status)
 }
 
 #simulation function
