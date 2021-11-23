@@ -62,10 +62,31 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   return(df)
 }
 
+#Random step length function
+get_step_length <- function(df, x_dim, y_dim){
+  step_lengths <- rnorm(n=nrow(df), mean=min(x_dim, y_dim)/4, sd=min(x_dim, y_dim)/12)
+  return(step_lengths)
+}
+
+#Random step direction function
+get_step_direction <- function(length_vec){
+  direction <- runif(n=length(length_vec), min=0, max=2*pi)
+}
+
+#Get delta_x, delta_y
+get_delts <- function(length_vec, direc_vec){
+  delta_x <- length_vec * cos(direc_vec)
+  delta_y <- length_vec * sin(direc_vec)
+  return(cbind(delta_x, delta_y))
+}
 
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
+  
+  for(i in 1:days){
+    
+  }
   
   
 }
