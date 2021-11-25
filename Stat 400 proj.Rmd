@@ -68,14 +68,15 @@ infection_status <- function(state, mean_crit_dist){
   current_infected <- state[state[,3]=='I',]
   current_suceptable <- state[state[,3]=='S',]
   current_removed <- state[state[,3]=='R',]
+  current_non_infected <- rbind(current_suceptable, current_removed)
   
   #store new infection status
-  new_status <- rep(NA, nrow(current_suceptable))
+  new_status <- rep(NA, nrow(current_non_infected))
   
   #Check to see which suceptable subjects get infected
   #For loop
   for(i in 1:nrow(current_infected)){
-    for(j in 1:nrow(current_suceptable)){
+    for(j in 1:nrow(current_non_infected)){
       x_i <- as.numeric(current_infected[i, 'x'])
       y_i <- as.numeric(current_infected[i, 'y'])
       x_s <- as.numeric(current_suceptable[j, 'x'])
@@ -87,7 +88,8 @@ infection_status <- function(state, mean_crit_dist){
       }else{new_status[j] <- 'S'}
     }
   }
-  return(new_status)
+  new_state <- c(new_status, current_infected[,3])
+  return(new_state)
 }
 
 #simulation function
