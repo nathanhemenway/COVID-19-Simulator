@@ -95,7 +95,7 @@ infection_status <- function(state, mean_crit_dist){
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
-  end_day <- rep(NA, days)
+  end_day <- list()
   
   for(i in 1:days){
     
@@ -106,19 +106,19 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
     updated_positions <- update_coords(initial_data, change)
     updated_state <- cbind(updated_positions, initial_data[,3])
     new_status <- infection_status(updated_state, 2)
-    end_day[i] <- cbind(updated_positions, new_status)
+    end_day[[i]] <- cbind(updated_positions, new_status)
     }else{
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
-    updated_positions <- update_coords(end_day[i-1], change)
-    updated_state <- cbind(updated_positions, end_day[i-1]$new_status)
+    updated_positions <- update_coords(end_day[[i-1]], change)
+    updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
     new_status <- infection_status(updated_state, 1/5)
-    end_day[i] <- cbind(updated_positions, new_status)
+    end_day[[i]] <- cbind(updated_positions, new_status)
       
     }
   }
-  return(end_day)
+  return(end_day[[2]])
 }
 
 #Testing
