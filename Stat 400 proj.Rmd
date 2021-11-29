@@ -61,6 +61,24 @@ update_coords <- function(og_df, delta_df){
   return(new_df)
 }
 
+coord_checker <- function(updated, x_dim, y_dim){
+  num_bads <- 0
+  for(i in 1:nrow(updated)){
+    if(as.numeric(updated[i, 'x']) > x_dim | as.numeric(updated[i, 'y']) > y_dim){
+      new_step <- get_step_length(updated[i,], x_dim, y_dim)
+      new_direction <- get_step_direction(new_step)
+      new_change <- get_delts(new_step, new_direction)
+      # new_df[i,1] <- as.numeric(og_df[i,'x']) + new_change[,'delta_x']
+      # new_df[i,2] <- as.numeric(og_df[i,'y']) + new_change[,'delta_y']
+      updated[i,] <- update_coords(updated[i,], new_change)
+      num_bads <- num_bads + 1
+    }
+  }
+  if(num_bads==0){
+    return(updated)
+  }
+}
+
 #Function for deciding if infections occured
 #BUG -- If the mean_crit_dist is small, all infections go away!!
 infection_status <- function(state, mean_crit_dist){
@@ -103,7 +121,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
-    updated_positions <- update_coords(initial_data, change)
+    updated_positions <- update_coords(initial_data, change, x_dim, y_dim)
     updated_state <- cbind(updated_positions, initial_data[,3])
     new_status <- infection_status(updated_state, 2)
     end_day[[i]] <- cbind(updated_positions, new_status)
@@ -111,7 +129,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
-    updated_positions <- update_coords(end_day[[i-1]], change)
+    updated_positions <- update_coords(end_day[[i-1]], change, x_dim, y_dim)
     updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
     new_status <- infection_status(updated_state, 1/5)
     end_day[[i]] <- cbind(updated_positions, new_status)
@@ -127,6 +145,9 @@ len <- get_step_length(df, 10, 10)
 dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
 newdf <- update_coords(df, delts)
+
+
+
 
 #S,I,R data
 suceptable = function(){
