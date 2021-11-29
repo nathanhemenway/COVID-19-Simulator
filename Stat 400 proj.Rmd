@@ -146,6 +146,7 @@ dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
 newdf <- update_coords(df, delts)
 
+<<<<<<< HEAD
 
 
 
@@ -161,6 +162,8 @@ recovered = function(){
 infected = function(){
   
 }
+=======
+>>>>>>> 0ca5ad53ac1bedcd0523535d1c42aec8d1bd29b6
 
 #reported monte carlo summary data
 qd = c(0,25,50,75)
@@ -171,3 +174,79 @@ r0 = c(1.8,1.73,1.8,1.63)
 mcsum = cbind(qd,pos,dncpv,dncpt,r0)
 colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak value [cases]",	"DNC peaking time [days]",	"R0"))
 ```
+
+This method is takes another approach. It's somewhat similar to the step function, but this one randomly changes the location of the individuals on a daily basis. Then at that point we gather its neighbors and calculate probability of them becoming infected. We keep track of those who have come in contact and 
+
+``` {r}
+#for knn
+#install.packages('dbscan') 
+library("dbscan")
+```
+
+``` {r}
+#variables
+incubation_time <- rgamma(5, 6, (2/3))
+crucial_distance <- rexp(5, 1/8)
+n = 2000
+starting_infected_prob = 0.005
+
+
+#starting data and plot
+starting_values = data.frame(cbind(1:n),
+                             cbind(runif(n,0,1),
+                             runif(n,0,1),
+                             rbinom(n,1,starting_infected_prob)),
+                             cbind(rep(0,n)))
+
+colnames(starting_values) = c("id","x","y","infected","susceptible")
+
+#this plot represents the random distribution of 2000 people in a 1km^2 area, with the blue dots being the infected individuals. Instead of trying to track progression of time, as the paper illustrates, my thought was to randomize the dot locations each iteration. Each iteration represents a day. The infected individual will be in another random location each day. 
+ggplot() + geom_point(aes(starting_values[,2],starting_values[,3],colour = starting_values[,4])) + xlab("x coordinate") + ylab("y coordinate")
+```
+
+
+```{r}
+
+#this calculates the distance from an infected individual
+point_dist = function(x1,y1,x2,y2){
+  val = sqrt((x2-x1)^2+(y2-y1)^2)
+  return(val)
+}
+
+#calculates the probability of infection
+#d = current distance from infected, dr = critical value to achieve certain probability of infection
+probability_of_infection = function(d,dr){
+  sigmoid = 1/(1+d*exp(d-dr))
+  return(sigmoid)
+}
+
+#returns data frame of current infected infected individuals
+infected_idx = function(df){
+  idx = df[df$infected==1,]
+  return(idx)
+}
+
+
+#this function returns a data frame of indexes of people considered susceptible. This function aims to calculate the distances of k neighbors then returns a df of indecies of those in neighborhood. We will need to keep a running track of the id's of susceptible neighbors and later factor in the probability of becoming infected.
+sus = function(df,idx){
+  
+  dist_arr = point_dist(df[,2],df[,3],df[idx,2],df[idx,3])
+  nn = kNN(dist_arr,k = 9)
+  nnidx = nn$id[idx,]
+  return(nnidx)
+}
+
+#estimate the probability one recovers
+recovered = function(df){
+  #lower probability of contracting again
+}
+
+```
+
+``` {r}
+simulator = function(start,b){
+  current_infected = infected_idx(start)
+  
+}
+```
+
