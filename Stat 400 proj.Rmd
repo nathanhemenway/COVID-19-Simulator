@@ -11,9 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 
-incubation_time <- rgamma(5, 6, (2/3))
-crucial_distance <- rexp(5, 1/8)
-
 #create starting positions and state function
 starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
@@ -53,11 +50,13 @@ get_delts <- function(length_vec, direc_vec){
 
 #Function for getting updated coordinates
 update_coords <- function(og_df, delta_df){
-  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=2)
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=3)
   new_df <- data.frame(new_mx)
   new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
   new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
-  colnames(new_df) <- c('x', 'y')
+  new_df[,3] <- og_df[,3]
+  colnames(new_df) <- c('x', 'y', 'subjects')
+  
   new_df
 }
 
@@ -76,7 +75,7 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
   new_direction <- get_step_direction(new_step)
   new_change <- get_delts(new_step, new_direction)
   new_df <- update_coords(og_df[baddies,], new_change)
-  full_df <- rbind(new_df, og_df[-baddies, -3])
+  full_df <- rbind(new_df, og_df[-baddies,])
   return(coord_checker(og_df, full_df, x_dim, y_dim))
   }
 }
@@ -123,23 +122,25 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
-    updated_positions <- update_coords(initial_data, change, x_dim, y_dim)
-    # checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-    updated_state <- cbind(updated_positions, initial_data[,3])
-    new_status <- infection_status(updated_state, 2)
-    end_day[[i]] <- cbind(updated_positions, new_status)
+    updated_positions <- update_coords(initial_data, change)
+    checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+    new_status <- infection_status(checked_positions, 2)
+    checked_positions[,3] <- new_status
+    end_day[[i]] <- checked_positions
+    
     }else{
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
-    updated_positions <- update_coords(end_day[[i-1]], change, x_dim, y_dim)
-    updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
-    new_status <- infection_status(updated_state, 1/5)
-    end_day[[i]] <- cbind(updated_positions, new_status)
+    updated_positions <- update_coords(end_day[[i-1]], change)
+    checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+    new_status <- infection_status(checked_positions, 1/5)
+    checked_positions[,3] <- new_status
+    end_day[[i]] <- checked_positions
       
     }
   }
-  return(end_day[[2]])
+  return(end_day[[3]])
 }
 
 #Testing
@@ -148,7 +149,9 @@ len <- get_step_length(df, 10, 10)
 dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
 newdf <- update_coords(df, delts)
-coord_checker(df, newdf, 10, 10)
+coords <- coord_checker(df, newdf, 10, 10)
+new_status <- infection_status(coords, 2)
+new_status
 
 #S,I,R data
 suceptable = function(){
