@@ -251,12 +251,33 @@ recovered = function(df){
   #lower probability of contracting again
 }
 
+
+update_infected = function(indx,state){
+  starting_values[,4] = state
+}
+
+counts = function(day,count){
+  vals = c(day,count)
+  return(vals)
+}
+
 ```
 
 ``` {r}
-simulator = function(start,b){
-  current_infected = infected_idx(start)
+simulator = function(start,b,days){
+  infected_df = cbind(c(1:days),c(rep(NA,days)))
+  
+  for(i in 1:days){
+    current_infected = infected_idx(start)
+    #list of neighbors close to infected with id, and distance from infected. 
+    
+    #calculate 
+    
+  }
   
 }
 ```
 
+```{r}
+
+```
