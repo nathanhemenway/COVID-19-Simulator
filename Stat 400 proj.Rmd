@@ -58,24 +58,36 @@ update_coords <- function(og_df, delta_df){
   new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
   new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
   colnames(new_df) <- c('x', 'y')
-  return(new_df)
-}
-
-coord_checker <- function(updated, x_dim, y_dim){
-  num_bads <- 0
-  for(i in 1:nrow(updated)){
-    if(as.numeric(updated[i, 'x']) > x_dim | as.numeric(updated[i, 'y']) > y_dim){
-      new_step <- get_step_length(updated[i,], x_dim, y_dim)
+  
+  baddies <- NULL
+  for(i in 1:nrow(new_df)){
+    if(as.numeric(new_df[i, 'x']) > x_dim | as.numeric(new_df[i, 'y']) > y_dim){
+      new_step <- get_step_length(new_df[i,], x_dim, y_dim)
       new_direction <- get_step_direction(new_step)
       new_change <- get_delts(new_step, new_direction)
-      # new_df[i,1] <- as.numeric(og_df[i,'x']) + new_change[,'delta_x']
-      # new_df[i,2] <- as.numeric(og_df[i,'y']) + new_change[,'delta_y']
-      updated[i,] <- update_coords(updated[i,], new_change)
-      num_bads <- num_bads + 1
+      new_df[i,] <- update_coords(new_df[i,], new_change)
+      baddies <- append(baddies, i)
     }
   }
-  if(num_bads==0){
-    return(updated)
+}
+
+coord_checker <- function(og_df, new_df, x_dim, y_dim){
+  baddies <- NULL
+  for(i in 1:nrow(new_df)){
+    if(as.numeric(new_df[i, 'x']) > x_dim | as.numeric(new_df[i, 'y']) > y_dim){
+      baddies <- append(baddies, i)
+    }
+  }
+  
+  if(is.null(baddies)){
+    return(new_df)
+  }else{
+  new_step <- get_step_length(new_df[i,], x_dim, y_dim)
+  new_direction <- get_step_direction(new_step)
+  new_change <- get_delts(new_step, new_direction)
+  new_df <- update_coords(og_df[baddies,], new_change)
+  full_df <- rbind(new_df, og_df[-baddies,])
+  return(coord_checker(og_df, full_df, x_dim, y_dim))
   }
 }
 
@@ -146,7 +158,7 @@ dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
 newdf <- update_coords(df, delts)
 
-<<<<<<< HEAD
+
 
 
 
@@ -162,8 +174,7 @@ recovered = function(){
 infected = function(){
   
 }
-=======
->>>>>>> 0ca5ad53ac1bedcd0523535d1c42aec8d1bd29b6
+
 
 #reported monte carlo summary data
 qd = c(0,25,50,75)
