@@ -185,7 +185,7 @@ mcsum = cbind(qd,pos,dncpv,dncpt,r0)
 colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak value [cases]",	"DNC peaking time [days]",	"R0"))
 ```
 
-This method is takes another approach. It's somewhat similar to the step function, but this one randomly changes the location of the individuals on a daily basis. Then at that point we gather its neighbors and calculate probability of them becoming infected. We keep track of those who have come in contact and 
+This method is takes another approach. It's somewhat similar to the step function, but this one randomly changes the location of the individuals on a daily basis. Then at that point we gather its neighbors and calculate probability of them becoming infected. We keep track of their state (and update on if they would become infected or not) - then after a certain duration they heal or die. This is computationally easier than having a step function of hundreds of points all moving in space, where we have to calculate distance of each point coming in contact of an infected one. 
 
 ``` {r}
 #for knn
