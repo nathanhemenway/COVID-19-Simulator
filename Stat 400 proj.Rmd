@@ -9,6 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#testing github
 library(tidyverse)
 
 #create starting positions and state function
