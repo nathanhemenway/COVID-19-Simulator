@@ -112,10 +112,6 @@ infection_status <- function(state, mean_crit_dist){
         new_status[j] <- 'I'
         newly_infected <- c(newly_infected, j)
       }
-      else{new_status[j] <- 'S'}
-
-      }
-      
       else{
         new_status[j] <- 'S'
       }
@@ -127,6 +123,7 @@ infection_status <- function(state, mean_crit_dist){
   
   # new_state <- c(new_status, current_infected[,3])
   return(new_state)
+}
   
 
 
