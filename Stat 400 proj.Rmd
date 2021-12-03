@@ -124,7 +124,6 @@ infection_status <- function(state, mean_crit_dist,day_r,rt){
       else{
         new_status[j] <- 'S'
       }
->>>>>>> infection status update
     }
   }
   
@@ -134,7 +133,7 @@ infection_status <- function(state, mean_crit_dist,day_r,rt){
   # new_state <- c(new_status, current_infected[,3])
   return(new_state)
   
-}
+
 
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
