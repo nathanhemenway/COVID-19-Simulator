@@ -83,7 +83,8 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
 
 #Function for deciding if infections occured
 #BUG -- If the mean_crit_dist is small, all infections go away!!
-infection_status <- function(state, mean_crit_dist){
+#BUG -- Sometimes d is NA, I assume it's when indv goes off map. 
+infection_status <- function(state, mean_crit_dist,day_r,rt){
   
   current_infected <- state[state[,3]=='I',]
   current_suceptable <- state[state[,3]=='S',]
@@ -94,8 +95,9 @@ infection_status <- function(state, mean_crit_dist){
   new_status <- rep(NA, nrow(current_non_infected))
   newly_infected <- NULL
   
-  #Check to see which suceptable subjects get infected
+  #Check to see which susceptible subjects get infected
   #For loop
+  
   for(i in 1:nrow(current_infected)){
     for(j in 1:nrow(current_non_infected)){
       x_i <- as.numeric(current_infected[i, 'x'])
@@ -104,10 +106,25 @@ infection_status <- function(state, mean_crit_dist){
       y_s <- as.numeric(current_suceptable[j, 'y'])
       crucial_distance <- rexp(1, 1/mean_crit_dist)
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
+    
+      
       if(d <= crucial_distance){
         new_status[j] <- 'I'
+
         newly_infected <- c(newly_infected, j)
       }else{new_status[j] <- 'S'}
+
+      }
+      
+      #if day is past recovery time, set to recovered
+      else if(day_r >= rt){
+        new_status[j] <- 'R'
+      }
+      
+      else{
+        new_status[j] <- 'S'
+      }
+>>>>>>> infection status update
     }
   }
   
@@ -116,6 +133,7 @@ infection_status <- function(state, mean_crit_dist){
   
   # new_state <- c(new_status, current_infected[,3])
   return(new_state)
+  
 }
 
 #simulation function
@@ -123,32 +141,51 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
   end_day <- list()
   
+  recovery_time <- c()
+  
   for(i in 1:days){
     
     if(i == 1){
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
+
     updated_positions <- update_coords(initial_data, change)
     checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
     new_status <- infection_status(checked_positions, 2)
     checked_positions[,3] <- new_status
     end_day[[i]] <- checked_positions
     
+    updated_positions <- update_coords(initial_data, change)#, x_dim, y_dim)x_dim,y_dim not parameters
+    # checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+    updated_state <- cbind(updated_positions, initial_data[,3])
+    new_status <- infection_status(updated_state, 2,i,14)
+    end_day[[i]] <- cbind(updated_positions, new_status)
     }else{
     step_size <- get_step_length(initial_data, x_dim, y_dim)
     direction <- get_step_direction(step_size)
     change <- get_delts(step_size, direction)
+
     updated_positions <- update_coords(end_day[[i-1]], change)
     checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
     new_status <- infection_status(checked_positions, 1/5)
     checked_positions[,3] <- new_status
     end_day[[i]] <- checked_positions
+
+    updated_positions <- update_coords(end_day[[i-1]], change)#, x_dim, y_dim) #x_dim,y_dim not parameters in update_coords
+    updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
+    
+    rand_recovery_time <- rpois(1,14)
+    new_status <- infection_status(updated_state, 1/5,i,rand_recovery_time)
+    
+    end_day[[i]] <- cbind(updated_positions, new_status)
+
       
     }
   }
   return(end_day[[3]])
 }
+
 
 #Testing
 df <- starting_vals(100, 2, 10, 10)
@@ -161,20 +198,18 @@ coords
 new_status <- infection_status(coords, 2)
 new_status
 
-#S,I,R data
-suceptable = function(){
-  
-}
-
-recovered = function(){
-  
-}
-
-infected = function(){
-  
-}
+x = simulator(100,25,1,1,2)
 
 
+```
+
+Plots
+``` {r}
+ggplot() + 
+  geom_line(aes())
+```
+
+```{r}
 #reported monte carlo summary data
 qd = c(0,25,50,75)
 pos = c(99.3,99.2,98.7,92.7)
@@ -185,99 +220,3 @@ mcsum = cbind(qd,pos,dncpv,dncpt,r0)
 colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak value [cases]",	"DNC peaking time [days]",	"R0"))
 ```
 
-This method is takes another approach. It's somewhat similar to the step function, but this one randomly changes the location of the individuals on a daily basis. Then at that point we gather its neighbors and calculate probability of them becoming infected. We keep track of their state (and update on if they would become infected or not) - then after a certain duration they heal or die. This is computationally easier than having a step function of hundreds of points all moving in space, where we have to calculate distance of each point coming in contact of an infected one. 
-
-``` {r}
-#for knn
-#install.packages('dbscan') 
-library("dbscan")
-```
-
-``` {r}
-#variables
-incubation_time <- rgamma(5, 6, (2/3))
-crucial_distance <- rexp(5, 1/8)
-n = 2000
-starting_infected_prob = 0.005
-
-
-#starting data and plot
-starting_values = data.frame(cbind(1:n),
-                             cbind(runif(n,0,1),
-                             runif(n,0,1),
-                             rbinom(n,1,starting_infected_prob)),
-                             cbind(rep(0,n)))
-
-colnames(starting_values) = c("id","x","y","infected","susceptible")
-
-#this plot represents the random distribution of 2000 people in a 1km^2 area, with the blue dots being the infected individuals. Instead of trying to track progression of time, as the paper illustrates, my thought was to randomize the dot locations each iteration. Each iteration represents a day. The infected individual will be in another random location each day. 
-ggplot() + geom_point(aes(starting_values[,2],starting_values[,3],colour = starting_values[,4])) + xlab("x coordinate") + ylab("y coordinate")
-```
-
-
-```{r}
-
-#this calculates the distance from an infected individual
-point_dist = function(x1,y1,x2,y2){
-  val = sqrt((x2-x1)^2+(y2-y1)^2)
-  return(val)
-}
-
-#calculates the probability of infection
-#d = current distance from infected, dr = critical value to achieve certain probability of infection
-probability_of_infection = function(d,dr){
-  sigmoid = 1/(1+d*exp(d-dr))
-  return(sigmoid)
-}
-
-#returns data frame of current infected infected individuals
-infected_idx = function(df){
-  idx = df[df$infected==1,]
-  return(idx)
-}
-
-
-#this function returns a data frame of indexes of people considered susceptible. This function aims to calculate the distances of k neighbors then returns a df of indecies of those in neighborhood. We will need to keep a running track of the id's of susceptible neighbors and later factor in the probability of becoming infected.
-sus = function(df,idx){
-  
-  dist_arr = point_dist(df[,2],df[,3],df[idx,2],df[idx,3])
-  nn = kNN(dist_arr,k = 9)
-  nnidx = nn$id[idx,]
-  return(nnidx)
-}
-
-#estimate the probability one recovers
-recovered = function(df){
-  #lower probability of contracting again
-}
-
-
-update_infected = function(indx,state){
-  starting_values[,4] = state
-}
-
-counts = function(day,count){
-  vals = c(day,count)
-  return(vals)
-}
-
-```
-
-``` {r}
-simulator = function(start,b,days){
-  infected_df = cbind(c(1:days),c(rep(NA,days)))
-  
-  for(i in 1:days){
-    current_infected = infected_idx(start)
-    #list of neighbors close to infected with id, and distance from infected. 
-    
-    #calculate 
-    
-  }
-  
-}
-```
-
-```{r}
-
-```
