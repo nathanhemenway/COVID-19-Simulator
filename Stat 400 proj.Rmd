@@ -84,7 +84,7 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
 #Function for deciding if infections occured
 #BUG -- If the mean_crit_dist is small, all infections go away!!
 #BUG -- Sometimes d is NA, I assume it's when indv goes off map. 
-infection_status <- function(state, mean_crit_dist,day_r,rt){
+infection_status <- function(state, mean_crit_dist){
   
   current_infected <- state[state[,3]=='I',]
   current_suceptable <- state[state[,3]=='S',]
@@ -110,15 +110,10 @@ infection_status <- function(state, mean_crit_dist,day_r,rt){
       
       if(d <= crucial_distance){
         new_status[j] <- 'I'
-
         newly_infected <- c(newly_infected, j)
-      }else{new_status[j] <- 'S'}
-
       }
-      
-      #if day is past recovery time, set to recovered
-      else if(day_r >= rt){
-        new_status[j] <- 'R'
+      else{new_status[j] <- 'S'}
+
       }
       
       else{
@@ -145,41 +140,42 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   for(i in 1:days){
     
     if(i == 1){
-    step_size <- get_step_length(initial_data, x_dim, y_dim)
-    direction <- get_step_direction(step_size)
-    change <- get_delts(step_size, direction)
-
-    updated_positions <- update_coords(initial_data, change)
-    checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-    new_status <- infection_status(checked_positions, 2)
-    checked_positions[,3] <- new_status
-    end_day[[i]] <- checked_positions
-    
-    updated_positions <- update_coords(initial_data, change)#, x_dim, y_dim)x_dim,y_dim not parameters
-    # checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-    updated_state <- cbind(updated_positions, initial_data[,3])
-    new_status <- infection_status(updated_state, 2,i,14)
-    end_day[[i]] <- cbind(updated_positions, new_status)
-    }else{
-    step_size <- get_step_length(initial_data, x_dim, y_dim)
-    direction <- get_step_direction(step_size)
-    change <- get_delts(step_size, direction)
-
-    updated_positions <- update_coords(end_day[[i-1]], change)
-    checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-    new_status <- infection_status(checked_positions, 1/5)
-    checked_positions[,3] <- new_status
-    end_day[[i]] <- checked_positions
-
-    updated_positions <- update_coords(end_day[[i-1]], change)#, x_dim, y_dim) #x_dim,y_dim not parameters in update_coords
-    updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
-    
-    rand_recovery_time <- rpois(1,14)
-    new_status <- infection_status(updated_state, 1/5,i,rand_recovery_time)
-    
-    end_day[[i]] <- cbind(updated_positions, new_status)
-
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(initial_data, change)
+      checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, 2)
+      checked_positions[,3] <- new_status
+      end_day[[i]] <- checked_positions
       
+      updated_positions <- update_coords(initial_data, change)#, x_dim, y_dim)x_dim,y_dim not parameters
+      # checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      updated_state <- cbind(updated_positions, initial_data[,3])
+      
+      new_status <- infection_status(updated_state, 2)
+      
+      end_day[[i]] <- cbind(updated_positions, new_status)
+    }
+    else{
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(end_day[[i-1]], change)
+      checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, 1/5)
+      checked_positions[,3] <- new_status
+      end_day[[i]] <- checked_positions
+  
+      updated_positions <- update_coords(end_day[[i-1]], change)#, x_dim, y_dim) #x_dim,y_dim not parameters in update_coords
+      updated_state <- cbind(updated_positions, end_day[[i-1]]$new_status)
+      
+      rand_recovery_time <- rpois(1,14)
+      new_status <- infection_status(updated_state, 1/5,i,rand_recovery_time)
+      
+      end_day[[i]] <- cbind(updated_positions, new_status)
     }
   }
   return(end_day[[3]])
