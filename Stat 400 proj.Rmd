@@ -24,17 +24,11 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   start_x <- runif(n=num_subjects, min=0, max=x_dim)
   start_y <- runif(n=num_subjects, min=0, max=y_dim)
   
-  #Create null incubation and recovery time columns
-  #inc_time <- rep(NA, num_subjects)
-  #rec_time <- rep(NA, num_subjects)
-  
-  
-  
   inc_time <- rep(-1,num_subjects)
   rec_days <- rep(-1,num_subjects)
   
   #Put into a data frame
-  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects,recovery_days,inc_time))
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
   colnames(df)[3] <- 'subjects'
@@ -96,8 +90,6 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
 
 #Function for deciding if infections occurred
 #BUG -- If the mean_crit_dist is small, all infections go away!!
-
-#t = the current day, rt is df of recovery times. 
 infection_status <- function(state, mean_crit_dist){
   
   current_infected <- state[state[,3]=='I',]
@@ -117,38 +109,24 @@ infection_status <- function(state, mean_crit_dist){
     for(j in 1:nrow(current_non_infected)){
       x_i <- as.numeric(current_infected[i, 'x'])
       y_i <- as.numeric(current_infected[i, 'y'])
-      x_s <- as.numeric(current_suceptable[j, 'x'])
-      y_s <- as.numeric(current_suceptable[j, 'y'])
-      
+      x_s <- as.numeric(current_non_infected[j, 'x'])
+      y_s <- as.numeric(current_non_infected[j, 'y'])
       
       crucial_distance <- rexp(1, 1/mean_crit_dist)
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
-    
-      
+      print(c(d <= crucial_distance, x_i, x_s))
       if(d <= crucial_distance){
         newly_infected <- c(newly_infected, j)
       }
-<<<<<<< HEAD
+
     }
   }
   current_non_infected[newly_infected, 3] <- 'I'
-  current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 5)
-  current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
-=======
-      
-      #check recovery time for person at z_s. If their recovery day time is past the current day, they recovered. 
-      if(z_s>=t){
-        new_status[j] <- 'Rec'
-      }
-    }
-  }
   #Give incubation time
-  current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 14)
-
-  #Give a recovery time
+  current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 5)
+  #Give recovery time
   current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
   
->>>>>>> aa4916951611dc48adfa8fbb1fd556fa83aba49d
   new_state <- rbind(current_infected, current_non_infected)
   return(new_state)
 }
@@ -157,8 +135,6 @@ infection_status <- function(state, mean_crit_dist){
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
   end_day <- list()
-  
-  recovery_time <- initial_data[,4]
   
   for(i in 1:days){
     
@@ -169,14 +145,19 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
       updated_positions <- update_coords(initial_data, change)
       checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      print(checked_positions)
       new_status <- infection_status(checked_positions, 2)
       
-      not_recovered = new_status[new_status[,5]>=0]
-      other = new_status[new_status[,5]<0]
-      
-      new_status = rbind(non_recovered[,5]-1,other)
-      
+      not_recovered = new_status[new_status[, 5] > 0]
+      new_time <- not_recovered[, 5] - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[new_status[, 5] == 0]
+      infected_0[, 3] <- 'R'
+      not_infected = new_status[new_status[, 5] < 0]
+
+      new_status = rbind(not_recovered, infected_0, not_infected)
       end_day[[i]] <- new_status
+      
      
     }
     
@@ -187,16 +168,18 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
       updated_positions <- update_coords(end_day[[i-1]], change)
       checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-      new_status <- infection_status(checked_positions, 1/5)
+      new_status <- infection_status(checked_positions, 5)
       
-      not_recovered = new_status[new_status[,5]>=0]
-      other = new_status[new_status[,5]<0]
+      not_recovered = new_status[new_status[, 5] > 0]
+      new_time <- not_recovered[, 5] - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[new_status[, 5] == 0]
+      infected_0[, 3] <- 'R'
+      not_infected = new_status[new_status[, 5] < 0]
       
-      new_status = rbind(non_recovered[,5]-1,other)
-      
+      new_status = rbind(not_recovered, infected_0, not_infected)
       end_day[[i]] <- new_status
-      
-      
+  
     }
   }
   return(end_day[[3]])
