@@ -128,11 +128,27 @@ infection_status <- function(state, mean_crit_dist){
       if(d <= crucial_distance){
         newly_infected <- c(newly_infected, j)
       }
+<<<<<<< HEAD
     }
   }
   current_non_infected[newly_infected, 3] <- 'I'
   current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 5)
   current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
+=======
+      
+      #check recovery time for person at z_s. If their recovery day time is past the current day, they recovered. 
+      if(z_s>=t){
+        new_status[j] <- 'Rec'
+      }
+    }
+  }
+  #Give incubation time
+  current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 14)
+
+  #Give a recovery time
+  current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
+  
+>>>>>>> aa4916951611dc48adfa8fbb1fd556fa83aba49d
   new_state <- rbind(current_infected, current_non_infected)
   return(new_state)
 }
