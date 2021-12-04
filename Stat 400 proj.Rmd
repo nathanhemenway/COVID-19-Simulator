@@ -31,6 +31,7 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects,recovery_days))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
+  colnames(df)[3] <- 'recovery_times'
   return(df)
 }
 
@@ -155,7 +156,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
       direction <- get_step_direction(step_size)
       change <- get_delts(step_size, direction)
       
-      r_times <- 
+      r_times <- get_recovery()
   
       updated_positions <- update_coords(initial_data, change)
       checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
