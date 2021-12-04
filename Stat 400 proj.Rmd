@@ -143,7 +143,10 @@ infection_status <- function(state, mean_crit_dist,t,rt){
       #}
     }
   }
-
+  #current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 14)
+  
+  #Give a recovery time
+  #current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
   
   new_state <- rbind(current_infected, current_non_infected)
   return(new_state)
