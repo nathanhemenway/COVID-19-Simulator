@@ -24,8 +24,11 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   start_x <- runif(n=num_subjects, min=0, max=x_dim)
   start_y <- runif(n=num_subjects, min=0, max=y_dim)
   
+  #generated days of recovery times for each person
+  recovery_days <- rpois(num_subjects,14)
+  
   #Put into a data frame
-  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects))
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects,recovery_days))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
   return(df)
@@ -81,14 +84,16 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
   }
 }
 
-#Function for deciding if infections occured
+#Function for deciding if infections occurred
 #BUG -- If the mean_crit_dist is small, all infections go away!!
-#BUG -- Sometimes d is NA, I assume it's when indv goes off map. 
-infection_status <- function(state, mean_crit_dist){
+infection_status <- function(state, mean_crit_dist,t){
   
   current_infected <- state[state[,3]=='I',]
   current_suceptable <- state[state[,3]=='S',]
   current_removed <- state[state[,3]=='R',]
+  
+  current_recovered <- state[state[,3]=='Rec',]
+  
   current_non_infected <- rbind(current_suceptable, current_removed)
   
   #store new infection status
@@ -104,6 +109,9 @@ infection_status <- function(state, mean_crit_dist){
       y_i <- as.numeric(current_infected[i, 'y'])
       x_s <- as.numeric(current_suceptable[j, 'x'])
       y_s <- as.numeric(current_suceptable[j, 'y'])
+      
+      z_s <- as.numeric(current_recovered[i,'Rec'])
+      
       crucial_distance <- rexp(1, 1/mean_crit_dist)
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
     
@@ -111,6 +119,10 @@ infection_status <- function(state, mean_crit_dist){
       if(d <= crucial_distance){
         new_status[j] <- 'I'
         newly_infected <- c(newly_infected, j)
+      }
+      #check recovery time for person at z_s
+      if(z_s>=t){
+        new_status[j] <- 'Rec'
       }
       else{
         new_status[j] <- 'S'
@@ -125,7 +137,9 @@ infection_status <- function(state, mean_crit_dist){
   return(new_state)
 }
   
-
+get_recovery_time <- function(){
+  
+}
 
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
@@ -140,10 +154,12 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
       step_size <- get_step_length(initial_data, x_dim, y_dim)
       direction <- get_step_direction(step_size)
       change <- get_delts(step_size, direction)
+      
+      r_times <- 
   
       updated_positions <- update_coords(initial_data, change)
       checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-      new_status <- infection_status(checked_positions, 2)
+      new_status <- infection_status(checked_positions, 2,i)
       checked_positions[,3] <- new_status
       end_day[[i]] <- checked_positions
       
@@ -162,7 +178,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
       updated_positions <- update_coords(end_day[[i-1]], change)
       checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-      new_status <- infection_status(checked_positions, 1/5)
+      new_status <- infection_status(checked_positions, 1/5,i)
       checked_positions[,3] <- new_status
       end_day[[i]] <- checked_positions
   
