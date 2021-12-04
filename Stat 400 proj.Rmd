@@ -24,14 +24,17 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   start_x <- runif(n=num_subjects, min=0, max=x_dim)
   start_y <- runif(n=num_subjects, min=0, max=y_dim)
   
-  #generated days of recovery times for each person
+  #pregenerated days of recovery times for each person
   recovery_days <- rpois(num_subjects,14)
+  inc_time <- rpois(num_subjects,5)
   
   #Put into a data frame
-  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects,recovery_days))
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects,recovery_days,inc_time))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
-  colnames(df)[3] <- 'recovery_times'
+  colnames(df)[3] <- 'subjects'
+  colnames(df)[4] <- 'recovery'
+  colnames(df)[5] <- 'incubation'
   return(df)
 }
 
@@ -55,13 +58,14 @@ get_delts <- function(length_vec, direc_vec){
 
 #Function for getting updated coordinates
 update_coords <- function(og_df, delta_df){
-  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=3)
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=5)
   new_df <- data.frame(new_mx)
   new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
   new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
   new_df[,3] <- og_df[,3]
-  colnames(new_df) <- c('x', 'y', 'subjects')
-  
+  new_df[,4] <- og_df[,4]
+  new_df[,5] <- og_df[,5]
+  colnames(new_df) <- c('x', 'y', 'subjects', 'recovery', 'incubation')
   new_df
 }
 
@@ -93,9 +97,10 @@ infection_status <- function(state, mean_crit_dist,t){
   current_suceptable <- state[state[,3]=='S',]
   current_removed <- state[state[,3]=='R',]
   
-  current_recovered <- state[state[,3]=='Rec',]
-  
   current_non_infected <- rbind(current_suceptable, current_removed)
+  
+  #is this right do get the list of recovery days?
+  current_rec_time <- state[state[,4]]
   
   #store new infection status
   new_status <- rep(NA, nrow(current_non_infected))
@@ -111,7 +116,7 @@ infection_status <- function(state, mean_crit_dist,t){
       x_s <- as.numeric(current_suceptable[j, 'x'])
       y_s <- as.numeric(current_suceptable[j, 'y'])
       
-      z_s <- as.numeric(current_recovered[i,'Rec'])
+      z_s <- as.numeric(current_rec_time[i])
       
       crucial_distance <- rexp(1, 1/mean_crit_dist)
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
@@ -121,10 +126,12 @@ infection_status <- function(state, mean_crit_dist,t){
         new_status[j] <- 'I'
         newly_infected <- c(newly_infected, j)
       }
-      #check recovery time for person at z_s
+      
+      #check recovery time for person at z_s. If their recovery day time is past the current day, they recovered. 
       if(z_s>=t){
         new_status[j] <- 'Rec'
       }
+      
       else{
         new_status[j] <- 'S'
       }
@@ -137,17 +144,13 @@ infection_status <- function(state, mean_crit_dist,t){
   # new_state <- c(new_status, current_infected[,3])
   return(new_state)
 }
-  
-get_recovery_time <- function(){
-  
-}
 
 #simulation function
 simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
   end_day <- list()
   
-  recovery_time <- c()
+  recovery_time <- initial_data[,4]
   
   for(i in 1:days){
     
@@ -155,8 +158,6 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
       step_size <- get_step_length(initial_data, x_dim, y_dim)
       direction <- get_step_direction(step_size)
       change <- get_delts(step_size, direction)
-      
-      r_times <- get_recovery()
   
       updated_positions <- update_coords(initial_data, change)
       checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
@@ -203,7 +204,6 @@ dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
 newdf <- update_coords(df, delts)
 coords <- coord_checker(df, newdf, 10, 10)
-coords
 new_status <- infection_status(coords, 2)
 new_status
 
