@@ -105,8 +105,6 @@ infection_status <- function(state, mean_crit_dist,t,rt){
   
   current_non_infected <- rbind(current_suceptable, current_removed)
   
-  
-  
   #store new infection status
   new_status <- rep(NA, nrow(current_non_infected))
   newly_infected <- NULL
@@ -137,16 +135,13 @@ infection_status <- function(state, mean_crit_dist,t,rt){
       if(z_s>=t){
         new_status[j] <- 'Rec'
       }
-      
-      #else{
-       # new_status[j] <- 'S'
-      #}
     }
   }
-  #current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 14)
-  
+  #Give incubation time
+  current_non_infected[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 14)
+
   #Give a recovery time
-  #current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
+  current_non_infected[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
   
   new_state <- rbind(current_infected, current_non_infected)
   return(new_state)
