@@ -24,8 +24,8 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   start_x <- runif(n=num_subjects, min=0, max=x_dim)
   start_y <- runif(n=num_subjects, min=0, max=y_dim)
   
-  inc_time <- rep(-1,num_subjects)
-  rec_days <- rep(-1,num_subjects)
+  inc_time <- rep(-1, num_subjects)
+  rec_days <- rep(-1, num_subjects)
   
   #Put into a data frame
   df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time))
@@ -34,6 +34,13 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   colnames(df)[3] <- 'subjects'
   colnames(df)[4] <- 'incubation'
   colnames(df)[5] <- 'recovery'
+  
+  #Assign a recovery time to the infected subjects
+  df[df[,3] == 'I', 5] <- rpois(I_0, 14)
+  
+  #Assign an incubation time to the infected subjects
+  df[df[,3] == 'I', 4] <- rpois(I_0, 5)
+  
   return(df)
 }
 
@@ -64,7 +71,7 @@ update_coords <- function(og_df, delta_df){
   new_df[,3] <- og_df[,3]
   new_df[,4] <- og_df[,4]
   new_df[,5] <- og_df[,5]
-  colnames(new_df) <- c('x', 'y', 'subjects', 'recovery', 'incubation')
+  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery')
   new_df
 }
 
@@ -131,9 +138,12 @@ infection_status <- function(state, mean_crit_dist){
 }
 
 #simulation function
-simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
+simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
   initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
   end_day <- list()
+  num_cases <- rep(NA, days)
+  num_cases <- c(I_0, num_cases)
+  num_new_cases <- rep(NA, days)
   
   for(i in 1:days){
     
@@ -144,7 +154,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
       updated_positions <- update_coords(initial_data, change)
       checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-      new_status <- infection_status(checked_positions, 2)
+      new_status <- infection_status(checked_positions, inf_dist)
       
       not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
       new_time <- as.numeric(not_recovered[, 5]) - 1
@@ -156,7 +166,10 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
       new_status = rbind(not_recovered, infected_0, not_infected)
       end_day[[i]] <- new_status
       
-     
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - I_0
+      
     }
     
     else{
@@ -166,7 +179,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
   
       updated_positions <- update_coords(end_day[[i-1]], change)
       checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
-      new_status <- infection_status(checked_positions, 5)
+      new_status <- infection_status(checked_positions, inf_dist)
       
       not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
       new_time <- as.numeric(not_recovered[, 5]) - 1
@@ -177,10 +190,14 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0){
 
       new_status = rbind(not_recovered, infected_0, not_infected)
       end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - num_cases[i-1]
   
     }
   }
-  return(end_day[[1]])
+  return(num_cases)
 }
 
 #Testing
@@ -194,7 +211,18 @@ coords
 new_status <- infection_status(coords, 2)
 new_status
 
-x = simulator(100,25,1,1,2)
+y <- simulator(30,25,10,10,2,1)
+x <- 0:30
+
+library(ggplot2)
+ggplot() +
+  geom_line(aes(x=x, y=y)) +
+  xlab('Day') +
+  ylab('Number of Cases') +
+  ggtitle('Number of Covid-19 cases over time')
+  
+
+
 
 
 
