@@ -175,7 +175,6 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
       infected_people[,4] <- new_inc_time
       other_people <- new_status[new_status[,3] != 'I',]
       new_status <- rbind(infected_people, other_people)
-      print(infected_people)
       
       end_day[[i]] <- new_status
       
@@ -208,8 +207,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
       infected_people[,4] <- new_inc_time
       other_people <- new_status[new_status[,3] != 'I',]
       new_status <- rbind(infected_people, other_people)
-      print(infected_people)
-      
+
       
       end_day[[i]] <- new_status
       
