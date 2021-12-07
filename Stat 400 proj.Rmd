@@ -255,7 +255,7 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
   samps <- data.frame(samps)
   
   #Create data frame to store confidence intervals
-  ci_df <- matrix(data=NA, nrow=days + 1, ncol=2)
+  ci_df <- matrix(data=NA, nrow=days + 1, ncol=3)
   ci_df <- data.frame(ci_df)
   
   for(i in 1:sample_size){
@@ -268,16 +268,20 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
     if(check){
     boot_obj <- boot(samps[ ,i], mean_func, 2000)
     ci_obj <- boot.ci(boot_obj, conf = .95, type = ci_type)
-    ci_df[i, ] <- c(ci_obj$percent[4], ci_obj$percent[5])
-    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i])}
+    ci_df[i, 1] <- ci_obj$percent[4]
+    ci_df[i, 2] <- ci_obj$t0
+    ci_df[i, 3] <- ci_obj$percent[5]
+    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i], samps[1, i])}
   }
 return(ci_df)
 }
 
-get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
 
-
-
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
 
 
 daily_cases <- y
