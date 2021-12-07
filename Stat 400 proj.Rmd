@@ -307,3 +307,88 @@ colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak valu
 mcsum
 ```
 
+```{r}
+simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
+  end_day <- list()
+  num_cases <- rep(NA, days)
+  num_cases <- c(I_0, num_cases)
+  num_new_cases <- rep(NA, days)
+  
+  for(i in 1:days){
+    
+    if(i == 1){
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(initial_data, change)
+      checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      #recovery time code
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+      
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - I_0
+      
+    }
+    
+    else{
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(end_day[[i-1]], change)
+      checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+
+      
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - num_cases[i-1]
+  
+    }
+  }
+  return(end_day)
+}
+days <- simulator22(20, 5, 1, 1, 1, 0.2)
+days
+
+ggplot() +
+  geom_point(aes(x=days[[20]][, 'x'], y= days[[20]][, 'y'], color=days[[20]][, 'subjects']))
+```
+
