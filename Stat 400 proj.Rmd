@@ -13,7 +13,6 @@ library(boot)
 ```
 
 ```{r}
-
 #create starting positions and state function
 starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
@@ -230,7 +229,6 @@ coords <- coord_checker(df, newdf, 1, 1)
 coords
 new_status <- infection_status(coords, 8)
 new_status
-print(new_status[,4])
 
 
 set.seed(400)
@@ -239,7 +237,7 @@ y <- simulator(n,100,10,10,2,1)
 x <- 0:n
 
 
-plot <- ggplot() +
+ggplot() +
   geom_line(aes(x=x, y=y)) +
   xlab('Day') +
   ylab('Number of Cases') +
@@ -247,10 +245,40 @@ plot <- ggplot() +
   
 
 #bootstrap
-
-mean_func <- function(x, idx) {
-  mean(x[idx])
+mean_func <- function(daytuh, idx) {
+  mean(daytuh[idx])
 }
+
+get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc'){
+  #Create data frame to store samples
+  samps <- matrix(data=NA, nrow=sample_size, ncol=days + 1)
+  samps <- data.frame(samps)
+  
+  #Create data frame to store confidence intervals
+  ci_df <- matrix(data=NA, nrow=days + 1, ncol=2)
+  ci_df <- data.frame(ci_df)
+  
+  for(i in 1:sample_size){
+    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist)
+  }
+  
+  for(i in 1:ncol(samps)){
+    #Make sure column has more than one unique value
+    check <- (length(unique(samps[ ,i])) != 1)
+    if(check){
+    boot_obj <- boot(samps[ ,i], mean_func, 2000)
+    ci_obj <- boot.ci(boot_obj, conf = .95, type = ci_type)
+    ci_df[i, ] <- c(ci_obj$percent[4], ci_obj$percent[5])
+    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i])}
+  }
+return(ci_df)
+}
+
+get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
+
+
+
+
 
 daily_cases <- y
 boot.case <- boot(daily_cases, mean_func, 2000)
