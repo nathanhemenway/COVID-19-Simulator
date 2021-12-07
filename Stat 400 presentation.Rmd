@@ -1,0 +1,118 @@
+---
+title: "Stat 400 Presentation"
+authors: Nathan Hemenway, Mark Hinds, Ian Hall
+date: "12/7/2021"
+output:
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(width=200)
+```
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Starting Values Function
+
+\tiny
+```{r, echo=TRUE}
+starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
+  
+  #Infect I_0 many starting subjects
+  subjects <- rep('S', num_subjects)
+  infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
+  subjects[infect] <- 'I'
+  
+  #Storage for x, y starting positions for the subjects
+  start_x <- runif(n=num_subjects, min=0, max=x_dim)
+  start_y <- runif(n=num_subjects, min=0, max=y_dim)
+  
+  inc_time <- rep(-1, num_subjects)
+  rec_days <- rep(-1, num_subjects)
+  
+  #Put into a data frame
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time))
+  colnames(df)[1] <- 'x'
+  colnames(df)[2] <- 'y'
+  colnames(df)[3] <- 'subjects'
+  colnames(df)[4] <- 'incubation'
+  colnames(df)[5] <- 'recovery'
+  
+  #Assign a recovery time to the infected subjects
+  df[df[,3] == 'I', 5] <- rpois(I_0, 14)
+  
+  #Assign an incubation time to the infected subjects
+  df[df[,3] == 'I', 4] <- rpois(I_0, 5)
+  
+  return(df)
+}
+```
+
+## Simulating Step Distance and Direction
+
+\tiny
+```{r, echo=TRUE}
+get_step_length <- function(df, x_dim, y_dim){
+  step_lengths <- rnorm(n=nrow(df), mean=min(x_dim, y_dim)/4, sd=min(x_dim, y_dim)/12)
+  return(step_lengths)
+}
+
+get_step_direction <- function(length_vec){
+  direction <- runif(n=length(length_vec), min=0, max=2*pi)
+}
+
+get_delts <- function(length_vec, direc_vec){
+  delta_x <- length_vec * cos(direc_vec)
+  delta_y <- length_vec * sin(direc_vec)
+  return(cbind(delta_x, delta_y))
+}
+```
+
+
+## Updating Coordinates and In-Bounds Check
+
+\tiny
+```{r, echo=TRUE}
+update_coords <- function(og_df, delta_df){
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=5)
+  new_df <- data.frame(new_mx)
+  new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
+  new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
+  new_df[,3] <- og_df[,3]
+  new_df[,4] <- og_df[,4]
+  new_df[,5] <- og_df[,5]
+  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery')
+  new_df
+}
+
+coord_checker <- function(og_df, new_df, x_dim, y_dim){
+  baddies <- NULL
+  for(i in 1:nrow(new_df)){
+    if(as.numeric(new_df[i, 'x']) > x_dim | as.numeric(new_df[i, 'x']) < 0 | as.numeric(new_df[i, 'y']) > y_dim | as.numeric(new_df[i, 'y']) < 0){
+      baddies <- append(baddies, i)
+    }
+  }
+  
+  if(is.null(baddies)){
+    return(new_df)
+  }else{
+  new_step <- get_step_length(new_df[i,], x_dim, y_dim)
+  new_direction <- get_step_direction(new_step)
+  new_change <- get_delts(new_step, new_direction)
+  new_df <- update_coords(og_df[baddies,], new_change)
+  full_df <- rbind(new_df, og_df[-baddies,])
+  return(coord_checker(og_df, full_df, x_dim, y_dim))
+  }
+}
+```
