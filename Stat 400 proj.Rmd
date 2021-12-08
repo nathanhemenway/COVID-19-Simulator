@@ -276,7 +276,7 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
 return(ci_df)
 }
 
-plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=3500, x_dim=100, y_dim=100, I_0=18, inf_dist=0.5, sample_size=20)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
@@ -294,18 +294,6 @@ boot.ci(boot.case, conf = .95, type = c("perc", "basic", "norm", "bca"))
 
 ```
 
-
-```{r}
-#reported monte carlo summary data
-qd = c(0,25,50,75)
-pos = c(99.3,99.2,98.7,92.7)
-dncpv = c(69,53,46,33)
-dncpt = c(26,32,43,42)
-r0 = c(1.8,1.73,1.8,1.63)
-mcsum = cbind(qd,pos,dncpv,dncpt,r0)
-colnames(mcsum,c("Quarantine degree [%]",	"Percentage of size %",	"DNC peak value [cases]",	"DNC peaking time [days]",	"R0"))
-mcsum
-```
 
 ```{r}
 simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
