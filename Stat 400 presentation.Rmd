@@ -118,11 +118,12 @@ coord_checker <- function(og_df, new_df, x_dim, y_dim){
 ```
 
 
-## Plot of infected people
+## Plot of infected people with bootstrap
 
 \tiny
 ```{r, echo = FALSE, output = TRUE}
 library(ggplot2)
+library(boot)
 starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
   #Infect I_0 many starting subjects
@@ -334,9 +335,311 @@ y <- simulator(n,100,10,10,2,1)
 x <- 0:n
 
 
+#bootstrap
+mean_func <- function(daytuh, idx) {
+  mean(daytuh[idx])
+}
+
+get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc'){
+  #Create data frame to store samples
+  samps <- matrix(data=NA, nrow=sample_size, ncol=days + 1)
+  samps <- data.frame(samps)
+  
+  #Create data frame to store confidence intervals
+  ci_df <- matrix(data=NA, nrow=days + 1, ncol=3)
+  ci_df <- data.frame(ci_df)
+  
+  for(i in 1:sample_size){
+    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist)
+  }
+  
+  for(i in 1:ncol(samps)){
+    #Make sure column has more than one unique value
+    check <- (length(unique(samps[ ,i])) != 1)
+    if(check){
+    boot_obj <- boot(samps[ ,i], mean_func, 2000)
+    ci_obj <- boot.ci(boot_obj, conf = .95, type = ci_type)
+    ci_df[i, 1] <- ci_obj$percent[4]
+    ci_df[i, 2] <- ci_obj$t0
+    ci_df[i, 3] <- ci_obj$percent[5]
+    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i], samps[1, i])}
+  }
+return(ci_df)
+}
+
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
+
 ggplot() +
-  geom_line(aes(x=x, y=y)) +
+  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red') +
   xlab('Day') +
   ylab('Number of Cases') +
   ggtitle('Number of Covid-19 cases over time')
+```
+
+## Boostrap
+
+```{r, echo = F}
+library(boot)
+starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
+  
+  #Infect I_0 many starting subjects
+  subjects <- rep('S', num_subjects)
+  infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
+  subjects[infect] <- 'I'
+  
+  #Storage for x, y starting positions for the subjects
+  start_x <- runif(n=num_subjects, min=0, max=x_dim)
+  start_y <- runif(n=num_subjects, min=0, max=y_dim)
+  
+  inc_time <- rep(-1, num_subjects)
+  rec_days <- rep(-1, num_subjects)
+  
+  #Put into a data frame
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time))
+  colnames(df)[1] <- 'x'
+  colnames(df)[2] <- 'y'
+  colnames(df)[3] <- 'subjects'
+  colnames(df)[4] <- 'incubation'
+  colnames(df)[5] <- 'recovery'
+  
+  #Assign a recovery time to the infected subjects
+  df[df[,3] == 'I', 5] <- rpois(I_0, 14)
+  
+  #Assign an incubation time to the infected subjects
+  df[df[,3] == 'I', 4] <- rpois(I_0, 5)
+  
+  return(df)
+}
+
+#Random step length function
+get_step_length <- function(df, x_dim, y_dim){
+  step_lengths <- rnorm(n=nrow(df), mean=min(x_dim, y_dim)/4, sd=min(x_dim, y_dim)/12)
+  return(step_lengths)
+}
+
+#Random step direction function
+get_step_direction <- function(length_vec){
+  direction <- runif(n=length(length_vec), min=0, max=2*pi)
+}
+
+#Get delta_x, delta_y
+get_delts <- function(length_vec, direc_vec){
+  delta_x <- length_vec * cos(direc_vec)
+  delta_y <- length_vec * sin(direc_vec)
+  return(cbind(delta_x, delta_y))
+}
+
+#Function for getting updated coordinates
+update_coords <- function(og_df, delta_df){
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=5)
+  new_df <- data.frame(new_mx)
+  new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
+  new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
+  new_df[,3] <- og_df[,3]
+  new_df[,4] <- og_df[,4]
+  new_df[,5] <- og_df[,5]
+  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery')
+  new_df
+}
+
+coord_checker <- function(og_df, new_df, x_dim, y_dim){
+  baddies <- NULL
+  for(i in 1:nrow(new_df)){
+    if(as.numeric(new_df[i, 'x']) > x_dim | as.numeric(new_df[i, 'x']) < 0 | as.numeric(new_df[i, 'y']) > y_dim | as.numeric(new_df[i, 'y']) < 0){
+      baddies <- append(baddies, i)
+    }
+  }
+  
+  if(is.null(baddies)){
+    return(new_df)
+  }else{
+  new_step <- get_step_length(new_df[i,], x_dim, y_dim)
+  new_direction <- get_step_direction(new_step)
+  new_change <- get_delts(new_step, new_direction)
+  new_df <- update_coords(og_df[baddies,], new_change)
+  full_df <- rbind(new_df, og_df[-baddies,])
+  return(coord_checker(og_df, full_df, x_dim, y_dim))
+  }
+}
+
+#Function for deciding if infections occurred
+infection_status <- function(state, mean_crit_dist){
+  
+  current_infected <- state[state[,3]=='I' & state[,4] <= 0,]
+  current_suceptable <- state[state[,3]=='S',]
+  current_removed <- state[state[,3]=='R',]
+  current_non_contagious <- state[state[,3]=='I' & state[,4] > 0,]
+  
+  #store new infection status
+  newly_infected <- NULL
+  
+  #Check to see which susceptible subjects get infected
+  #For loop
+  if(nrow(current_suceptable) != 0 & nrow(current_infected) != 0){
+  for(i in 1:nrow(current_infected)){
+    for(j in 1:nrow(current_suceptable)){
+      x_i <- as.numeric(current_infected[i, 'x'])
+      y_i <- as.numeric(current_infected[i, 'y'])
+      x_s <- as.numeric(current_suceptable[j, 'x'])
+      y_s <- as.numeric(current_suceptable[j, 'y'])
+     
+      
+      crucial_distance <- rexp(1, 1/mean_crit_dist)
+      
+      
+      d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
+      if(d <= crucial_distance){
+        newly_infected <- c(newly_infected, j)
+      }
+
+    }
+  }
+  
+  current_suceptable[newly_infected, 3] <- 'I'
+  #Give incubation time
+  current_suceptable[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 5)
+  #Give recovery time
+  current_suceptable[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
+  
+  new_state <- rbind(current_infected, current_suceptable, current_removed, current_non_contagious)
+  return(new_state)
+  }else{return(state)}
+}
+
+#simulation function
+simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
+  end_day <- list()
+  num_cases <- rep(NA, days)
+  num_cases <- c(I_0, num_cases)
+  num_new_cases <- rep(NA, days)
+  
+  for(i in 1:days){
+    
+    if(i == 1){
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(initial_data, change)
+      checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      #recovery time code
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+      
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - I_0
+      
+    }
+    
+    else{
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(end_day[[i-1]], change)
+      checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+
+      
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - num_cases[i-1]
+  
+    }
+  }
+  return(num_cases)
+}
+
+#Testing
+df <- starting_vals(1000, 2, 1, 1)
+len <- get_step_length(df, 1, 1)
+dir <- get_step_direction(len)
+delts <- get_delts(len, dir)
+newdf <- update_coords(df, delts)
+coords <- coord_checker(df, newdf, 1, 1)
+new_status <- infection_status(coords, 8)
+
+set.seed(400)
+n=50
+y <- simulator(n,100,10,10,2,1)
+x <- 0:n
+
+#bootstrap
+mean_func <- function(daytuh, idx) {
+  mean(daytuh[idx])
+}
+
+get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc'){
+  #Create data frame to store samples
+  samps <- matrix(data=NA, nrow=sample_size, ncol=days + 1)
+  samps <- data.frame(samps)
+  
+  #Create data frame to store confidence intervals
+  ci_df <- matrix(data=NA, nrow=days + 1, ncol=3)
+  ci_df <- data.frame(ci_df)
+  
+  for(i in 1:sample_size){
+    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist)
+  }
+  
+  for(i in 1:ncol(samps)){
+    #Make sure column has more than one unique value
+    check <- (length(unique(samps[ ,i])) != 1)
+    if(check){
+    boot_obj <- boot(samps[ ,i], mean_func, 2000)
+    ci_obj <- boot.ci(boot_obj, conf = .95, type = ci_type)
+    ci_df[i, 1] <- ci_obj$percent[4]
+    ci_df[i, 2] <- ci_obj$t0
+    ci_df[i, 3] <- ci_obj$percent[5]
+    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i], samps[1, i])}
+  }
+return(ci_df)
+}
+
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=10, y_dim=10, I_0=2, inf_dist=1, sample_size=5)
+
+
+daily_cases <- y
+boot.case <- boot(daily_cases, mean_func, 2000)
+
+plot(boot.case)
+
+
 ```
