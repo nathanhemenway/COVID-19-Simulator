@@ -392,3 +392,4 @@ ggplot() +
   geom_point(aes(x=days[[20]][, 'x'], y= days[[20]][, 'y'], color=days[[20]][, 'subjects']))
 ```
 
+
