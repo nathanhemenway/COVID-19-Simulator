@@ -16,7 +16,6 @@ library(tidyverse)
 library(ggplot2)
 library(boot)
 
-
 starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   
   #Infect I_0 many starting subjects
@@ -300,6 +299,45 @@ simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
   return(end_day)
 }
 ```
+
+## Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics
+
+Original Authors: Stavros Maltezos, Angelika Georgapakopoulou
+
+Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
+
+## Introduction
+
+- Aim to investigate the transmission and incubation random processes of COVID-19.
+
+- Our focus will be on simulating daily infection case counts. 
+
+- The goal of the study is to generate epidemiological based on natural mechanism of transmission of this disease assuming random interactions of a large-finite number of individuals in very short distance ranges.
+
+
+## Assumptions
+
+- The transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotmically. 
+
+- the step of movement of people is a randomly assigned process.
+
+- the specific parameters of focus will be recovery and incubation time. 
+
+##
+
+
+## General Model
+
+- Step Function
+    - Consider dots on a plane, with random 
+    
+- This is approached through an SIR model: Susceptible, Infected, Recovered. All change based on time. 
+
+## Variables
+
+- not complete
+
+
 
 
 ## Simulating Step Distance and Direction
