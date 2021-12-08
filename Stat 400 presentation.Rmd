@@ -650,7 +650,7 @@ ggplot() +
   ggtitle('Number of Covid-19 cases over time')
 ```
 
-## Plot With Bootstrap 95% CI, 100 subjects
+## Plot With Bootstrap 95% CI, 200 subjects
 
 \tiny
 ```{r}
@@ -666,7 +666,7 @@ ggplot() +
 
 ```
 
-## 'Flatten the Curve' - Pseudo Vaccination Effect
+## Pseudo Vaccination Effect
 
 \tiny
 ```{r}
