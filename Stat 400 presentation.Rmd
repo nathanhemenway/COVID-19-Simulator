@@ -329,21 +329,25 @@ Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
 
 - the specific parameters of focus will be recovery and incubation time. 
 
-##
-
 
 ## General Model
 
 - Step Function
-    - Consider dots on a plane, with random 
+  ![Sample](/cloud/project/image.jpg)
     
-- This is approached through an SIR model: Susceptible, Infected, Recovered. All change based on time. 
-
+- This is approached through an SIR model: Susceptible, Infected, Recovered. All change based on time as the function iterates through a set number of days. 
+  - 0.5% of the initial subjects start out with the virus (infected)
+  - 99.5% subjects are susceptible
+  - 0% recovered
+  
 ## Variables
 
-- not complete
-
-
+- Factors to consider in the transmission of a virus. 
+  - What is the relationship and distribution between the infection probability and the physical distance
+  - High/low virus load, varying physical distances, ineffective vs effective mask wearing. 
+  - Environmental conditions: humidity, temperature, air ventilation. 
+- Based on real epidemiological data analysis, these encompassing factors will be distributed Exponential(rate = lambda)
+- Recovery and Incubation times ~ Gamma(alpha, beta), But in order to get whole number for days, we distribute them Possion(lambda)
 
 
 ## Simulating Step Distance and Direction
