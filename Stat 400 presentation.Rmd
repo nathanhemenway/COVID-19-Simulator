@@ -316,7 +316,7 @@ Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
 
 - Our focus will be on simulating daily infection case counts. 
 
-- The goal of the study is to generate epidemiological based on natural mechanism of transmission of this disease assuming random interactions of a large-finite number of individuals in very short distance ranges.
+- The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges.
 
 
 ## Assumptions
@@ -330,19 +330,19 @@ Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
 
 ## General Model
     
-- This is approached through an SIR model: Susceptible, Infected, Recovered. All change based on time as the function iterates through a set number of days. 
+- This is approached through an SIR model: Susceptible, Infected, Recovered. All change in the SIR model is based on time, as the function iterates through a set number of days. 
   - 0.5% of the initial subjects start out with the virus (infected)
-  - 99.5% subjects are susceptible
-  - 0% recovered
+  - 99.5% subjects are susceptible.
+  - 0% starting recovery.
   
-## Variables
+## Variables and Distributions
 
 - Factors to consider in the transmission of a virus. 
-  - What is the relationship and distribution between the infection probability and the physical distance
+  - What is the relationship and distribution between the infection probability and the physical distance?
   - High/low virus load, varying physical distances, ineffective vs effective mask wearing. 
   - Environmental conditions: humidity, temperature, air ventilation. 
 - Based on real epidemiological data analysis, these encompassing factors will be distributed Exponential(rate = lambda)
-- Recovery and Incubation times ~ Gamma(alpha, beta), But in order to get whole number for days, we distribute them Possion(lambda)
+- Recovery and Incubation times ~ Gamma(alpha, beta), But in order to get whole number for our outputted days, we chose to distribute them Possion(lambda)
 
 ## What We are Trying to Simulate
 
