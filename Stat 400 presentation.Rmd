@@ -7,6 +7,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+set.seed(400)
 knitr::opts_chunk$set(echo = FALSE)
 options(width=200)
 ```
@@ -346,7 +347,7 @@ Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
 ## What We are Trying to Simulate
 
 - Step Function
-  <!-- ![Sample](/cloud/project/image.jpg) -->
+![Sample](/cloud/project/image.jpg)
 
 
 ## Simulating Step Distance and Direction
