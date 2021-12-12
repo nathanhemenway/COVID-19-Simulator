@@ -1,0 +1,9 @@
+---
+title: "Paper"
+author: "Nathan Hemenway"
+date: "12/12/2021"
+output: pdf_document
+---
+
+Motivation
+The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance, as well as incubation and recovery times have on the long term spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily cases of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
