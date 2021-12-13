@@ -14,12 +14,17 @@ library(boot)
 
 ```{r}
 #create starting positions and state function
-starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
+starting_vals <- function(num_subjects, I_0, x_dim, y_dim, prop_vac){
   
   #Infect I_0 many starting subjects
   subjects <- rep('S', num_subjects)
   infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
   subjects[infect] <- 'I'
+  
+  #Determining if a person is vaccinated
+  vac_ppl <- sample(x = 1:num_subjects, size = round(prop_vac * num_subjects), replace = F)
+  vac_vec <- rep(F , num_subjects)
+  vac_vec[vac_ppl] <- T
   
   #Storage for x, y starting positions for the subjects
   start_x <- runif(n=num_subjects, min=0, max=x_dim)
@@ -29,12 +34,13 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim){
   rec_days <- rep(-1, num_subjects)
   
   #Put into a data frame
-  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time))
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time, vac_vec))
   colnames(df)[1] <- 'x'
   colnames(df)[2] <- 'y'
   colnames(df)[3] <- 'subjects'
   colnames(df)[4] <- 'incubation'
   colnames(df)[5] <- 'recovery'
+  colnames(df)[6] <- 'vaccine'
   
   #Assign a recovery time to the infected subjects
   df[df[,3] == 'I', 5] <- rpois(I_0, 14)
@@ -72,7 +78,8 @@ update_coords <- function(og_df, delta_df){
   new_df[,3] <- og_df[,3]
   new_df[,4] <- og_df[,4]
   new_df[,5] <- og_df[,5]
-  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery')
+  new_df[,6] <- og_df[,6]
+  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery', 'vaccine')
   new_df
 }
 
@@ -119,10 +126,16 @@ infection_status <- function(state, mean_crit_dist){
      
       
       crucial_distance <- rexp(1, 1/mean_crit_dist)
-      
+      vaccine_status <- current_suceptable[j, 'vaccine']
+      if(vaccine_status == T) {
+        vac_eff <- as.logical(rbinom(1,1,.8))
+      }
+      else {
+        vac_eff <- F
+      }
       
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
-      if(d <= crucial_distance){
+      if(d <= crucial_distance & vac_eff == F){
         newly_infected <- c(newly_infected, j)
       }
 
@@ -141,8 +154,8 @@ infection_status <- function(state, mean_crit_dist){
 }
 
 #simulation function
-simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
-  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
+simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0, prop_vac = prop_vac)
   end_day <- list()
   num_cases <- rep(NA, days)
   num_cases <- c(I_0, num_cases)
@@ -220,7 +233,7 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
 }
 
 #Testing
-df <- starting_vals(1000, 2, 1, 1)
+df <- starting_vals(1000, 2, 1, 1, .8)
 len <- get_step_length(df, 1, 1)
 dir <- get_step_direction(len)
 delts <- get_delts(len, dir)
@@ -233,11 +246,11 @@ new_status
 
 set.seed(400)
 n=50
-y <- simulator(n,100,10,10,2,1)
+y <- simulator(n,100,10,10,2,1,.95)
 x <- 0:n
 
 
-ggplot() +
+plot <- ggplot() +
   geom_line(aes(x=x, y=y)) +
   xlab('Day') +
   ylab('Number of Cases') +
