@@ -5,6 +5,291 @@ date: "12/12/2021"
 output: pdf_document
 ---
 
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(boot)
+#create starting positions and state function
+starting_vals <- function(num_subjects, I_0, x_dim, y_dim, prop_vac){
+  
+  #Infect I_0 many starting subjects
+  subjects <- rep('S', num_subjects)
+  infect <- sample(x = 1:num_subjects, size=I_0, replace=FALSE)
+  subjects[infect] <- 'I'
+  
+  #Determining if a person is vaccinated
+  vac_ppl <- sample(x = 1:num_subjects, size = round(prop_vac * num_subjects), replace = F)
+  vac_vec <- rep(F , num_subjects)
+  vac_vec[vac_ppl] <- T
+  
+  #Storage for x, y starting positions for the subjects
+  start_x <- runif(n=num_subjects, min=0, max=x_dim)
+  start_y <- runif(n=num_subjects, min=0, max=y_dim)
+  
+  inc_time <- rep(-1, num_subjects)
+  rec_days <- rep(-1, num_subjects)
+  
+  #Put into a data frame
+  df <- as.data.frame(cbind(as.numeric(start_x), as.numeric(start_y), subjects, rec_days, inc_time, vac_vec))
+  colnames(df)[1] <- 'x'
+  colnames(df)[2] <- 'y'
+  colnames(df)[3] <- 'subjects'
+  colnames(df)[4] <- 'incubation'
+  colnames(df)[5] <- 'recovery'
+  colnames(df)[6] <- 'vaccine'
+  
+  #Assign a recovery time to the infected subjects
+  df[df[,3] == 'I', 5] <- rpois(I_0, 14)
+  
+  #Assign an incubation time to the infected subjects
+  df[df[,3] == 'I', 4] <- rpois(I_0, 5)
+  
+  return(df)
+}
+
+#Random step length function
+get_step_length <- function(df, x_dim, y_dim){
+  step_lengths <- rnorm(n=nrow(df), mean=min(x_dim, y_dim)/4, sd=min(x_dim, y_dim)/12)
+  return(step_lengths)
+}
+
+#Random step direction function
+get_step_direction <- function(length_vec){
+  direction <- runif(n=length(length_vec), min=0, max=2*pi)
+}
+
+#Get delta_x, delta_y
+get_delts <- function(length_vec, direc_vec){
+  delta_x <- length_vec * cos(direc_vec)
+  delta_y <- length_vec * sin(direc_vec)
+  return(cbind(delta_x, delta_y))
+}
+
+#Function for getting updated coordinates
+update_coords <- function(og_df, delta_df){
+  new_mx <- matrix(data=NA, nrow=nrow(og_df), ncol=5)
+  new_df <- data.frame(new_mx)
+  new_df[,1] <- as.numeric(og_df[,'x']) + delta_df[,'delta_x']
+  new_df[,2] <- as.numeric(og_df[,'y']) + delta_df[,'delta_y']
+  new_df[,3] <- og_df[,3]
+  new_df[,4] <- og_df[,4]
+  new_df[,5] <- og_df[,5]
+  new_df[,6] <- og_df[,6]
+  colnames(new_df) <- c('x', 'y', 'subjects', 'incubation', 'recovery', 'vaccine')
+  new_df
+}
+
+coord_checker <- function(og_df, new_df, x_dim, y_dim){
+  baddies <- NULL
+  for(i in 1:nrow(new_df)){
+    if(as.numeric(new_df[i, 'x']) > x_dim | as.numeric(new_df[i, 'x']) < 0 | as.numeric(new_df[i, 'y']) > y_dim | as.numeric(new_df[i, 'y']) < 0){
+      baddies <- append(baddies, i)
+    }
+  }
+  
+  if(is.null(baddies)){
+    return(new_df)
+  }else{
+  new_step <- get_step_length(new_df[i,], x_dim, y_dim)
+  new_direction <- get_step_direction(new_step)
+  new_change <- get_delts(new_step, new_direction)
+  new_df <- update_coords(og_df[baddies,], new_change)
+  full_df <- rbind(new_df, og_df[-baddies,])
+  return(coord_checker(og_df, full_df, x_dim, y_dim))
+  }
+}
+
+#Function for deciding if infections occurred
+infection_status <- function(state, mean_crit_dist){
+  
+  current_infected <- state[state[,3]=='I' & state[,4] <= 0,]
+  current_suceptable <- state[state[,3]=='S',]
+  current_removed <- state[state[,3]=='R',]
+  current_non_contagious <- state[state[,3]=='I' & state[,4] > 0,]
+  
+  #store new infection status
+  newly_infected <- NULL
+  
+  #Check to see which susceptible subjects get infected
+  #For loop
+  if(nrow(current_suceptable) != 0 & nrow(current_infected) != 0){
+  for(i in 1:nrow(current_infected)){
+    for(j in 1:nrow(current_suceptable)){
+      x_i <- as.numeric(current_infected[i, 'x'])
+      y_i <- as.numeric(current_infected[i, 'y'])
+      x_s <- as.numeric(current_suceptable[j, 'x'])
+      y_s <- as.numeric(current_suceptable[j, 'y'])
+      
+      crucial_distance <- rexp(1, 1/mean_crit_dist)
+      vaccine_status <- current_suceptable[j, 'vaccine']
+      if(vaccine_status == T) {
+        vac_eff <- as.logical(rbinom(1,1,.8))
+      }
+      else {
+        vac_eff <- F
+      }
+      
+      d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
+      if(d <= crucial_distance & (vac_eff == F)){
+        newly_infected <- c(newly_infected, j)
+      }
+    }
+  }
+  
+  current_suceptable[newly_infected, 3] <- 'I'
+  #Give incubation time
+  current_suceptable[newly_infected, 4] <- rpois(n=length(newly_infected), lambda = 5)
+  #Give recovery time
+  current_suceptable[newly_infected, 5] <- rpois(n=length(newly_infected), lambda = 14)
+  
+  new_state <- rbind(current_infected, current_suceptable, current_removed, current_non_contagious)
+  return(new_state)
+  }else{return(state)}
+}
+
+#simulation function
+simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0, prop_vac = prop_vac)
+  end_day <- list()
+  num_cases <- rep(NA, days)
+  num_cases <- c(I_0, num_cases)
+  num_new_cases <- rep(NA, days)
+  
+  for(i in 1:days){
+    
+    if(i == 1){
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(initial_data, change)
+      checked_positions <- coord_checker(og_df=initial_data, new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      #recovery time code
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+      
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - I_0
+      
+    }
+    
+    else{
+      step_size <- get_step_length(initial_data, x_dim, y_dim)
+      direction <- get_step_direction(step_size)
+      change <- get_delts(step_size, direction)
+  
+      updated_positions <- update_coords(end_day[[i-1]], change)
+      checked_positions <- coord_checker(og_df=end_day[[i-1]], new_df=updated_positions, x_dim=x_dim, y_dim=y_dim)
+      new_status <- infection_status(checked_positions, inf_dist)
+      
+      not_recovered <- new_status[as.numeric(new_status[, 5]) > 0, ]
+      new_time <- as.numeric(not_recovered[, 5]) - 1
+      not_recovered[, 5] <- new_time
+      infected_0 <- new_status[as.numeric(new_status[, 5]) == 0, ]
+      infected_0[, 3] <- rep('R', nrow(infected_0))
+      not_infected = new_status[as.numeric(new_status[, 5]) < 0, ]
+      new_status = rbind(not_recovered, infected_0, not_infected)
+      
+      #incubation time code
+      infected_people <- new_status[new_status[,3] == 'I',]
+      new_inc_time <- as.numeric(infected_people[,4]) - 1
+      infected_people[,4] <- new_inc_time
+      other_people <- new_status[new_status[,3] != 'I',]
+      new_status <- rbind(infected_people, other_people)
+
+      end_day[[i]] <- new_status
+      
+      #Calculate number of new cases
+      num_cases[i+1] <- sum(new_status[,3]=='I')
+      num_new_cases[i] <- sum(new_status[,3]=='I') - num_cases[i-1]
+  
+    }
+  }
+  return(num_cases)
+}
+
+#Testing
+df <- starting_vals(1000, 2, 1, 1, .8)
+len <- get_step_length(df, 1, 1)
+dir <- get_step_direction(len)
+delts <- get_delts(len, dir)
+newdf <- update_coords(df, delts)
+coords <- coord_checker(df, newdf, 1, 1)
+coords
+new_status <- infection_status(coords, 8)
+new_status
+
+set.seed(400)
+n=50
+y <- simulator(100, 1000, 1, 1, 5, 0.005, 0)
+x <- 0:100
+
+ggplot() +
+  geom_line(aes(x=x, y=y)) +
+  xlab('Day') +
+  ylab('Number of Cases') +
+  ggtitle('Number of Covid-19 cases over time')
+  
+
+#bootstrap
+mean_func <- function(daytuh, idx) {
+  mean(daytuh[idx])
+}
+
+get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc', prop_vac = 0){
+  #Create data frame to store samples
+  samps <- matrix(data=NA, nrow=sample_size, ncol=days + 1)
+  samps <- data.frame(samps)
+  
+  #Create data frame to store confidence intervals
+  ci_df <- matrix(data=NA, nrow=days + 1, ncol=3)
+  ci_df <- data.frame(ci_df)
+  
+  for(i in 1:sample_size){
+    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac)
+  }
+  
+  for(i in 1:ncol(samps)){
+    #Make sure column has more than one unique value
+    check <- (length(unique(samps[ ,i])) != 1)
+    if(check){
+    boot_obj <- boot(samps[ ,i], mean_func, 2000)
+    ci_obj <- boot.ci(boot_obj, conf = .95, type = ci_type)
+    ci_df[i, 1] <- ci_obj$percent[4]
+    ci_df[i, 2] <- ci_obj$t0
+    ci_df[i, 3] <- ci_obj$percent[5]
+    }else{ci_df[i, ] <- c(samps[1, i], samps[1, i], samps[1, i])}
+  }
+return(ci_df)
+}
+
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=1, y_dim=1, I_0=5, inf_dist=0.5, sample_size=20, prop_vac = 0.8)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
+
+```
+
 Background:
 The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics aim's to investigate the transmission and incubation random processes of COVID-19. The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges. A few important assumptions that were made were in how the transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotically. Their model defined the steps of movement in a defined space as a randomly assigned process. They approached this through the SIR model; A model defining Susceptible, Infected, Recovered individuals. All change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulation daily infection counts over a range of time. In order to capture many factors in the transmission including the relationship between infection probability between physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma(alpha,beta).
 
@@ -12,7 +297,20 @@ Motivation:
 The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance, as well as incubation and recovery times have on the long term spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily cases of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
 
 Methodology:
+To start, we created functions that generate a random step length. This was done by using a normal distribution with a mean and standard deviation of the minimum of the dimensions divided by four and twelve respectively. Once we have a step length we generate a step direction from a uniform(0, 2$\pi$) distribution. This is the direction angle in radians. From these two pieces of information, we can then update the coordinate values in the update_coords function.
 
 
 Results:
+Going to look at 1x1 with 1000 people: represents small town population density with 0.5% intial infected. Will look at distances between 0.001 (6 ft) to 0.01 (60 ft?) and see what differences exist.
+```{r, cache=TRUE}
+plot_dat <- get_bootstrap_cis(days=150, num_subjects=1000, x_dim=1, y_dim=1, I_0=5, inf_dist=0.01, sample_size=20, prop_vac = 0.8)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
+
+
+```
+
 
