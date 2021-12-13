@@ -123,7 +123,6 @@ infection_status <- function(state, mean_crit_dist){
       y_i <- as.numeric(current_infected[i, 'y'])
       x_s <- as.numeric(current_suceptable[j, 'x'])
       y_s <- as.numeric(current_suceptable[j, 'y'])
-     
       
       crucial_distance <- rexp(1, 1/mean_crit_dist)
       vaccine_status <- current_suceptable[j, 'vaccine']
@@ -135,10 +134,9 @@ infection_status <- function(state, mean_crit_dist){
       }
       
       d <- sqrt((x_i - x_s)^2 + (y_i - y_s)^2)
-      if(d <= crucial_distance & vac_eff == F){
+      if(d <= crucial_distance & (vac_eff == F)){
         newly_infected <- c(newly_infected, j)
       }
-
     }
   }
   
@@ -220,7 +218,6 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac)
       other_people <- new_status[new_status[,3] != 'I',]
       new_status <- rbind(infected_people, other_people)
 
-      
       end_day[[i]] <- new_status
       
       #Calculate number of new cases
@@ -243,14 +240,12 @@ coords
 new_status <- infection_status(coords, 8)
 new_status
 
-
 set.seed(400)
 n=50
-y <- simulator(n,100,10,10,2,1,.95)
-x <- 0:n
+y <- simulator(100, 1000, 1, 1, 5, 0.005, 0)
+x <- 0:100
 
-
-plot <- ggplot() +
+ggplot() +
   geom_line(aes(x=x, y=y)) +
   xlab('Day') +
   ylab('Number of Cases') +
@@ -262,7 +257,7 @@ mean_func <- function(daytuh, idx) {
   mean(daytuh[idx])
 }
 
-get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc'){
+get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, sample_size, ci_type='perc', prop_vac = 0){
   #Create data frame to store samples
   samps <- matrix(data=NA, nrow=sample_size, ncol=days + 1)
   samps <- data.frame(samps)
@@ -272,7 +267,7 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
   ci_df <- data.frame(ci_df)
   
   for(i in 1:sample_size){
-    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist)
+    samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac)
   }
   
   for(i in 1:ncol(samps)){
@@ -289,21 +284,12 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
 return(ci_df)
 }
 
-plot_dat <- get_bootstrap_cis(days=50, num_subjects=3500, x_dim=100, y_dim=100, I_0=18, inf_dist=0.5, sample_size=20)
+plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=1, y_dim=1, I_0=5, inf_dist=0.5, sample_size=20, prop_vac = 0.8)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
-
-
-daily_cases <- y
-boot.case <- boot(daily_cases, mean_func, 2000)
-
-plot(boot.case)
-
-boot.ci(boot.case, conf = .95, type = c("perc", "basic", "norm", "bca"))
-
 
 ```
 
