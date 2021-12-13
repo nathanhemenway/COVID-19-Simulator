@@ -5,5 +5,14 @@ date: "12/12/2021"
 output: pdf_document
 ---
 
-Motivation
+Background:
+The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics aim's to investigate the transmission and incubation random processes of COVID-19. The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges. A few important assumptions that were made were in how the transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotically. Their model defined the steps of movement in a defined space as a randomly assigned process. They approached this through the SIR model; A model defining Susceptible, Infected, Recovered individuals. All change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulation daily infection counts over a range of time. In order to capture many factors in the transmission including the relationship between infection probability between physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma(alpha,beta).
+
+Motivation:
 The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance, as well as incubation and recovery times have on the long term spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily cases of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
+
+Methodology:
+
+
+Results:
+
