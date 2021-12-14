@@ -271,20 +271,86 @@ To start, we created functions that generate a random step length. This was done
 
 The obvious problem that arises when using this approach is that subjects will inevitably leave the specified space they are supposed to remain in. For example, if we want the subjects to stay in a [0, 1] x [0, 1] square, and we let them move in any direction, the mean step distance will be 0.25, so it would only take a centered subject a couple moves in the same direction before they leave the space. The solution we employed was to check and see whether a certain move would put a subject out of bounds, and if so re-sample a different move, then repeat for all subjects until they are all within bounds. This is what the coord_checker() function does.
 
-After moving the subjects randomly in the given space, the next step in the simulation is to check if any infected subjects have infected others. This is done via the infection_status() function. The first thing we did was subset the subjects into different data frames by infection status. Then we can check how far the susceptible subjects are from the infected subjects. If they come within a crucial distance generated using an exponential distribution, we infect the susceptible subject.
+After moving the subjects randomly in the given space, the next step in the simulation is to check if any infected subjects have infected others. This is done via the infection_status() function. The first thing we did was subset the subjects into different data frames by infection status. Then we can check how far the susceptible subjects are from the infected subjects. If they come within a crucial distance generated using an exponential distribution, then they are vulnerable to infection. Then if the susceptible person is vaccinated, we generate a binomial(1, 0.8) random variable to determine if the vaccine was effective in preventing infection. The third condition necessary for infection to occur is that the incubation period of the virus has passed for the infected person. The incubation length is assigned upon infection using rpois(1, 5), and decreases by one each day until it reaches zero. If binomial vaccine effect returns false, and the susceptible person is within the generated crucial distance of the infected person, and the infected person is past the incubation period, then the suceptible person becomes infected. Once infected, a subject is assigned a recovery time using rpois(1, 14). For each iteration in the simulator, one is subtracted from the recovery time. Once recovery time reaches zero, the infection status of the subject is changed from infected to recovered.
 
 
 Results:
-Going to look at 1x1 with 1000 people: represents small town population density with 0.5% intial infected. Will look at distances between 0.001 (6 ft) to 0.01 (60 ft?) and see what differences exist.
+Going to look at 1x1 with 1000 people: represents small town population density with 0.5% intial infected. Will look at distances between 0.001 (6 ft) to 0.01 (60 ft?) and see what differences exist. Assuming no vaccinations.
 ```{r, cache=TRUE}
-plot_dat <- get_bootstrap_cis(days=100, num_subjects=100, x_dim=1, y_dim=1, I_0=5, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
+set.seed(400)
+#~6ft apart
+y <- simulator(150, 1000, 1, 1, 5, 0.001, 0)
+x <- 0:150
 
 ggplot() +
-  geom_line(aes(x=1:101, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
-  geom_line(aes(x=1:101, y=plot_dat[ ,2])) +
-  geom_line(aes(x=1:101, y=plot_dat[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=x, y=y)) +
+  xlab('Day') +
+  ylab('Number of Cases') +
+  ggtitle('Number of Covid-19 cases over time')
+
+#~26 ft apart
+y <- simulator(150, 1000, 1, 1, 5, 0.005, 0)
+x <- 0:150
+
+ggplot() +
+  geom_line(aes(x=x, y=y)) +
+  xlab('Day') +
+  ylab('Number of Cases') +
+  ggtitle('Number of Covid-19 cases over time')
+
+#~ 53ft apart
+y <- simulator(150, 1000, 1, 1, 5, 0.01, 0)
+x <- 0:150
+
+ggplot() +
+  geom_line(aes(x=x, y=y)) +
+  xlab('Day') +
+  ylab('Number of Cases') +
+  ggtitle('Number of Covid-19 cases over time')
+
+```
+Write about difference between different crucial distances here.
+
+```{r}
+set.seed(400)
+plot_dat1 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat1[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat1[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat1[ ,3]), linetype = 2, color = 'red')
+
+plot_dat2 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.5)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat2[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat2[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat2[ ,3]), linetype = 2, color = 'red')
+
+plot_dat3 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat3[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat3[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat3[ ,3]), linetype = 2, color = 'red')
+
+plot_dat4 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.95)
+
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat4[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:51, y=plot_dat4[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat4[ ,3]), linetype = 2, color = 'red')
+
+
+#plot all vaccine curves
+ggplot() +
+  geom_line(aes(x=1:51, y=plot_dat1[ ,2])) +
+  geom_line(aes(x=1:51, y=plot_dat2[ ,2]), color='red') +
+  geom_line(aes(x=1:51, y=plot_dat3[ ,2]), color='blue') +
+  geom_line(aes(x=1:51, y=plot_dat4[ ,2]), color='green')
+
+
 
 
 ```
-
 
