@@ -277,12 +277,12 @@ After moving the subjects randomly in the given space, the next step in the simu
 Results:
 Going to look at 1x1 with 1000 people: represents small town population density with 0.5% intial infected. Will look at distances between 0.001 (6 ft) to 0.01 (60 ft?) and see what differences exist.
 ```{r, cache=TRUE}
-plot_dat <- get_bootstrap_cis(days=150, num_subjects=1000, x_dim=1, y_dim=1, I_0=5, inf_dist=0.01, sample_size=20, prop_vac = 0.8)
+plot_dat <- get_bootstrap_cis(days=100, num_subjects=100, x_dim=1, y_dim=1, I_0=5, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
 
 ggplot() +
-  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
-  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:101, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:101, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:101, y=plot_dat[ ,3]), linetype = 2, color = 'red')
 
 
 ```
