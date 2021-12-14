@@ -226,29 +226,6 @@ simulator <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac)
   return(num_cases)
 }
 
-#Testing
-df <- starting_vals(1000, 2, 1, 1, .8)
-len <- get_step_length(df, 1, 1)
-dir <- get_step_direction(len)
-delts <- get_delts(len, dir)
-newdf <- update_coords(df, delts)
-coords <- coord_checker(df, newdf, 1, 1)
-coords
-new_status <- infection_status(coords, 8)
-new_status
-
-set.seed(400)
-n=50
-y <- simulator(100, 1000, 1, 1, 5, 0.005, 0)
-x <- 0:100
-
-ggplot() +
-  geom_line(aes(x=x, y=y)) +
-  xlab('Day') +
-  ylab('Number of Cases') +
-  ggtitle('Number of Covid-19 cases over time')
-  
-
 #bootstrap
 mean_func <- function(daytuh, idx) {
   mean(daytuh[idx])
@@ -281,13 +258,6 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
 return(ci_df)
 }
 
-plot_dat <- get_bootstrap_cis(days=50, num_subjects=100, x_dim=1, y_dim=1, I_0=5, inf_dist=0.5, sample_size=20, prop_vac = 0.8)
-
-ggplot() +
-  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
-  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
-
 ```
 
 Background:
@@ -297,7 +267,11 @@ Motivation:
 The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance, as well as incubation and recovery times have on the long term spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily cases of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
 
 Methodology:
-To start, we created functions that generate a random step length. This was done by using a normal distribution with a mean and standard deviation of the minimum of the dimensions divided by four and twelve respectively. Once we have a step length we generate a step direction from a uniform(0, 2$\pi$) distribution. This is the direction angle in radians. From these two pieces of information, we can then update the coordinate values in the update_coords function.
+To start, we created functions that generate a random step length. This was done using the rnorm() function for the normal distribution with a mean and standard deviation of the minimum of the dimensions divided by four and twelve respectively. Once we have a step length we generate a step direction from a uniform(0, 2$\pi$) distribution using runif(). This gives the direction angle in radians. From these two pieces of information, we can then update the coordinate values in the update_coords function by adding the change to the original x and y values. This is done using trigonometry equations for the legs of a triangle given the hypotenuse and angle.
+
+The obvious problem that arises when using this approach is that subjects will inevitably leave the specified space they are supposed to remain in. For example, if we want the subjects to stay in a [0, 1] x [0, 1] square, and we let them move in any direction, the mean step distance will be 0.25, so it would only take a centered subject a couple moves in the same direction before they leave the space. The solution we employed was to check and see whether a certain move would put a subject out of bounds, and if so re-sample a different move, then repeat for all subjects until they are all within bounds. This is what the coord_checker() function does.
+
+After moving the subjects randomly in the given space, the next step in the simulation is to check if any infected subjects have infected others. This is done via the infection_status() function. The first thing we did was subset the subjects into different data frames by infection status. Then we can check how far the susceptible subjects are from the infected subjects. If they come within a crucial distance generated using an exponential distribution, we infect the susceptible subject.
 
 
 Results:
