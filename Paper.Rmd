@@ -311,6 +311,7 @@ ggplot() +
 ```
 Write about difference between different crucial distances here.
 
+Compare different vaccination rates
 ```{r}
 set.seed(400)
 plot_dat1 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0)
