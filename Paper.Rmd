@@ -42,8 +42,8 @@ starting_vals <- function(num_subjects, I_0, x_dim, y_dim, prop_vac){
   #Assign a recovery time to the infected subjects
   df[df[,3] == 'I', 5] <- round(rgamma(n=I_0, 6, 2/3))
   
-  #Assign an incubation time to the infected subjects
-  df[df[,3] == 'I', 4] <- rpois(I_0, 5)
+  #Assign an incubation time to the infected subjects (Source)
+  df[df[,3] == 'I', 4] <- rpois(I_0, 5.15)
   
   return(df)
 }
@@ -354,3 +354,9 @@ ggplot() +
 
 ```
 
+
+Bibliography:
+
+[1] S. Maltezos and A. Georgakopoulou, “Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics,” Infection, Genetics and Evolution, vol. 92, p. 104896, 2021, doi: https://doi.org/10.1016/j.meegid.2021.104896.
+
+[2] Lauer SA, Grantz KH, Bi Q, Jones FK, Zheng Q, Meredith HR, Azman AS, Reich NG, Lessler J. "The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application." Ann Intern Med. 2020 May 5;172(9):577-582. doi: 10.7326/M20-0504. Epub 2020 Mar 10. PMID: 32150748; PMCID: PMC7081172.
