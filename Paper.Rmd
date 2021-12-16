@@ -242,7 +242,6 @@ get_bootstrap_cis <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, s
   
   for(i in 1:sample_size){
     samps[i, ] <- simulator(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac)
-    print(i)
   }
   
   for(i in 1:ncol(samps)){
