@@ -316,16 +316,16 @@ Resimulated by: Nathan Hemenway, Mark Hinds, Ian Hall
 
 - Our focus will be on simulating daily infection case counts. 
 
-- The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges.
+- The goal of the study is to generate epidemiological data based on the natural mechanisms of transmission of the virus assuming random interactions of subjects in a confined space.
 
 
 ## Assumptions
 
-- The transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotmically. 
+- The transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, as the distance between subjects goes to zero. 
 
-- the step of movement of people is a randomly assigned process.
+- The step of movement of people is a randomly assigned process.
 
-- the specific parameters of focus will be recovery and incubation time. 
+- The specific parameters of focus will be recovery and incubation time. 
 
 
 ## General Model

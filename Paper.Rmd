@@ -261,7 +261,7 @@ return(ci_df)
 ```
 
 Background:
-The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics" aims to investigate the transmission and incubation random processes of Covid-19. The goal of the study is to generate epidemiological data based on the natural mechanisms of transmission of the virus assuming random interactions of a large-finite number of subjects in very short distances. A few important assumptions were made in how the transmission of the virus occurs when the physical distance between subjects decreases, so that the probability of transmission converges to one as the distance between subjects goes to zero. Their model defined the steps of movement in a defined space as a random process. They approached this through the SIR model; A model defining Susceptible, Infected, and Recovered individuals. Any change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulated daily infection counts over a number of days. In order to capture the many factors in transmission, including the relationship between infection probability and physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma($\alpha$, $\beta$) [1].
+The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics" aims to investigate the transmission and incubation random processes of Covid-19. The goal of the study is to generate epidemiological data based on the natural mechanisms of transmission of Covid-19 assuming random interactions between subjects. A few important assumptions were made in how the transmission of Covid-19 occurs when the physical distance between subjects decreases, so that the probability of transmission converges to one as the distance between subjects goes to zero. Their model defined the steps of movement in a defined space as a random process. They approached this through the SIR model; A model defining Susceptible, Infected, and Recovered individuals. Any change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulated daily infection counts over a number of days. In order to capture the many factors in transmission, including the relationship between infection probability and physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma($\alpha$, $\beta$) [1].
 
 Motivation:
 The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance (affected by masks), level at which the population is vaccinated, as well as incubation and recovery times have on the spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily case counts of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
@@ -273,7 +273,7 @@ The problem that arises when using this approach is that subjects will inevitabl
 
 After moving the subjects randomly in the given space, the next step in the simulation is to check if any infected subjects have infected others. This is done via the infection_status function. The first thing we did was subset the subjects into different data frames by infection status. Then we can check how far the susceptible subjects are from the infected subjects. If they come within a crucial distance generated using an exponential distribution with the passed in mean crucial distance, then they are vulnerable to infection. If the susceptible person is vaccinated, we generate a binomial(1, 0.8) random variable to determine if the vaccine was effective in preventing infection. We chose 0.8 to be the likelihood the vaccine protects the susceptible subject against infection. The third condition necessary for infection to occur is that the incubation period of the virus has passed for the infected person. The incubation length is assigned upon infection using rpois(1, 5.15), and decreases by one each day until it reaches zero. If binomial vaccine effect returns false, and the susceptible person is within the generated crucial distance of the infected person, and the infected person is past the incubation period, then the susceptible person becomes infected. Once infected, a subject is assigned a recovery time using round(rgamma(1, 6, 2/3)). For each iteration in the simulator, one is subtracted from the recovery time. Once recovery time reaches zero, the infection status of the subject is changed from infected to recovered.
 
-All the above culminates in the simulator function. This function takes in the given area, number of subjects, number of starting infected subjects, mean infection distance, number of days for the simulation, and proportion of subjects that are vaccinated as arguments. Using a for loop for each day, the function generates new positions for the subjects, and returns how many people have been infected per day. This can be used to generate a plot for the number of daily cases by plotting day on the x axis and number of cases on the y axis. If you run the simulation repeatedly, you can create a bootstrap confidence interval for the mean number of cases each day. This is done in the get_bootstrap_cis function. The function returns the bootstrap confidence intervals as well as the mean for each day, for a given sample size. For our purposes we used a sample size of 20 due to the computational burden of repeatedly running simulations. This data can be used to create a plot of the mean number of cases per day as well as 95% bootstrap confidence intervals for each day. We decided to use percentile bootstrap confidence intervals since they are the most interpretable.
+All the above culminates in the simulator function. This function takes in the given area, number of subjects, number of starting infected subjects, mean infection distance, number of days for the simulation, and proportion of subjects that are vaccinated as arguments. Using a for loop for each day, the function generates new positions for the subjects, and returns how many people have been infected per day. This can be used to generate a plot for the number of daily cases by plotting day on the x axis and number of cases on the y axis. If you run the simulation repeatedly, you can create a bootstrap confidence interval for the mean number of cases each day. This is done in the get_bootstrap_cis function. The function returns the bootstrap confidence intervals as well as the mean for each day, for a given sample size. For our purposes we used sample sizes of 20 and 30 due to the computational burden of repeatedly running simulations. This data can be used to create a plot of the mean number of cases per day as well as 95% bootstrap confidence intervals for each day. We decided to use percentile bootstrap confidence intervals since they are the most interpretable.
 
 
 Results:
@@ -315,7 +315,7 @@ We started with 5 infected people in each simulation. In our first two simulatio
 
 ```{r, echo=FALSE}
 set.seed(400)
-plot_dat1 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0)
+plot_dat1 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=30, prop_vac = 0)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat1[ ,1]), linetype = 2, color = 'red') +
@@ -324,7 +324,7 @@ ggplot() +
   labs(x="Day", y="People infected") +
   ggtitle('Covid-19 Cases by Day')
 
-plot_dat2 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.5)
+plot_dat2 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=30, prop_vac = 0.5)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat2[ ,1]), linetype = 2, color = 'red') +
@@ -333,7 +333,7 @@ ggplot() +
   labs(x="Day", y="People infected") +
   ggtitle('Covid-19 Cases by Day')
 
-plot_dat3 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
+plot_dat3 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=30, prop_vac = 0.8)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat3[ ,1]), linetype = 2, color = 'red') +
@@ -342,7 +342,7 @@ ggplot() +
   labs(x="Day", y="People infected") +
   ggtitle('Covid-19 Cases by Day')
 
-plot_dat4 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.95)
+plot_dat4 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=30, prop_vac = 0.95)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat4[ ,1]), linetype = 2, color = 'red') +
