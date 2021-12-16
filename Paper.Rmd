@@ -288,7 +288,7 @@ ggplot() +
   geom_line(aes(x=x, y=y)) +
   xlab('Day') +
   ylab('Number of Cases') +
-  ggtitle('Number of Covid-19 cases over time')
+  ggtitle('Number of Covid-19 Cases Over Time')
 
 #~26 ft apart
 y <- simulator(150, 1000, 1, 1, 5, 0.005, 0)
@@ -298,7 +298,7 @@ ggplot() +
   geom_line(aes(x=x, y=y)) +
   xlab('Day') +
   ylab('Number of Cases') +
-  ggtitle('Number of Covid-19 cases over time')
+  ggtitle('Number of Covid-19 Cases Over Time')
 
 #~ 53ft apart
 plot_dat <- get_bootstrap_cis(days=150, num_subjects=1000, x_dim=1, y_dim=1, I_0=5, inf_dist=0.01, sample_size=20, prop_vac = 0)
@@ -307,7 +307,8 @@ ggplot() +
   geom_line(aes(x=1:151, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:151, y=plot_dat[ ,2])) +
   geom_line(aes(x=1:151, y=plot_dat[ ,3]), linetype = 2, color = 'red') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 ```
 We started with 5 infected people in each simulation. In our first two simulations we were attempting to simulate a 6- and 26- foot infection distance. As you can see from the first two plots above, no one was infected from the 5 initial people who were infected for the mean crucial distance of 6 feet. For the crucial distance of 26 feet, some people got infected early on, but eventually everyone recovered and the number of infections went to zero. This is because in these examples we were attempting to simulate a small town with a low population density. This is supposed to represent 1000 people in a town that is 36 million square feet or about 1.3 square miles. Since the population density is low, it is unlikely for two people to come in close enough contact to contract Covid-19 in our simulation. This is a scenario in which our simulator might not be realistic. Our simulator is assuming every person is independent and randomly moves around from day to day. This doesn't account for seeing friends or going home to your family, which are common situations where contracting Covid-19 is more likely. Accounting for these factors might be possible, but it's beyond the scope of this project. In our third simulation, we used a bootstrap confidence interval for an infection distance of about 60 feet. This distance was finally large enough so that people still got infected despite the low population density. Based on the plot, the number of infected people will peak around 50 days and then slowly decrease as the majority of people start to recover and gain immunity. This simulation looks more realistic and follows the infection trend that viruses generally have. 
@@ -320,7 +321,8 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat1[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat1[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat1[ ,3]), linetype = 2, color = 'red') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 plot_dat2 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.5)
 
@@ -328,7 +330,8 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat2[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat2[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat2[ ,3]), linetype = 2, color = 'red') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 plot_dat3 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
 
@@ -336,7 +339,8 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat3[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat3[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat3[ ,3]), linetype = 2, color = 'red') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 plot_dat4 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.95)
 
@@ -344,7 +348,8 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat4[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat4[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat4[ ,3]), linetype = 2, color = 'red') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 
 #plot all vaccine curves
@@ -353,7 +358,8 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat2[ ,2]), color='red') +
   geom_line(aes(x=1:51, y=plot_dat3[ ,2]), color='blue') +
   geom_line(aes(x=1:51, y=plot_dat4[ ,2]), color='green') + 
-  labs(x="Day", y="People infected")
+  labs(x="Day", y="People infected") +
+  ggtitle('Covid-19 Cases by Day')
 
 ```
 
