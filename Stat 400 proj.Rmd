@@ -294,8 +294,8 @@ ggplot() +
 
 
 ```{r}
-simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
-  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0)
+simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist, prop_vac){
+  initial_data <- starting_vals(num_subjects = num_subjects, x_dim=x_dim, y_dim=y_dim, I_0=I_0, prop_vac = prop_vac)
   end_day <- list()
   num_cases <- rep(NA, days)
   num_cases <- c(I_0, num_cases)
@@ -371,7 +371,7 @@ simulator22 <- function(days, num_subjects, x_dim, y_dim, I_0, inf_dist){
   }
   return(end_day)
 }
-days <- simulator22(20, 5, 1, 1, 1, 0.2)
+days <- simulator22(20, 5, 1, 1, 1, 0.2, 0)
 days
 
 ggplot() +
