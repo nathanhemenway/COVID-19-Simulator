@@ -1,6 +1,6 @@
 ---
 title: "Paper"
-author: "Nathan Hemenway"
+author: "Nathan Hemenway, Mark Hinds, Ian Hall"
 date: "12/12/2021"
 output: pdf_document
 ---
@@ -262,7 +262,7 @@ return(ci_df)
 ```
 
 Background:
-The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics aim's to investigate the transmission and incubation random processes of COVID-19. The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges. A few important assumptions that were made were in how the transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotically. Their model defined the steps of movement in a defined space as a randomly assigned process. They approached this through the SIR model; A model defining Susceptible, Infected, Recovered individuals. All change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulation daily infection counts over a range of time. In order to capture many factors in the transmission including the relationship between infection probability between physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma(alpha,beta).
+The paper "Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics aim's to investigate the transmission and incubation random processes of COVID-19. The goal of the study is to generate epidemiological data based on the natural mechanism's of transmission of the virus assuming random interactions of a large-finite number of individuals in very short distance ranges. A few important assumptions that were made were in how the transmission of the virus occurs when the physical distance between individuals decreases to where the probability of transmission converges to one, asymptotically. Their model defined the steps of movement in a defined space as a randomly assigned process. They approached this through the SIR model; A model defining Susceptible, Infected, Recovered individuals. All change in the SIR model is based on time, as the function iterates through a set number of days. They started with a 0.5% infection rate and simulation daily infection counts over a range of time. In order to capture many factors in the transmission including the relationship between infection probability between physical distance, effective and ineffective mask wearing, and environmental conditions they distributed these factors Exponential(rate = lambda). Initial recovery and incubation times were distributed Gamma(alpha,beta). (Source 1)
 
 Motivation:
 The motivation behind our Monte Carlo Covid-19 simulator is to be able to better understand the spread of Covid-19. Through Monte Carlo simulation, we can observe what affect variables such as starting infected population, total population, physical space, infection distance, as well as incubation and recovery times have on the long term spread of the disease. These variables can be easily adjusted in our code to give different scenarios. The way we measure the effect changes in the aforementioned variables is by looking at the difference between the daily number of cases. This can be well visualized in a plot giving number of infected people per day. At the beginning of the Covid-19 pandemic, there were public health measures put into place that aimed at 'flattening' the curve of daily cases of Covid-19. We are interested in seeing what effect different policies and population characteristics have on the plot of daily Covid-19 infections. If we can understand what affect different input variables have on the outcome of the pandemic, we can possibly make better policy decisions regarding Covid-19.
@@ -307,10 +307,11 @@ plot_dat <- get_bootstrap_cis(days=150, num_subjects=1000, x_dim=1, y_dim=1, I_0
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red') + 
+  labs(x="Day", y="People infected")
 
 ```
-Write about difference between different crucial distances here.
+We started with 5 infected people in each simulation. In our first two simulations we were attempting to simulate a 6 and 26 foot infection distance. As you can see from the first two plots above, no one was infected from the 5 initial people who were infected. This is because in these examples we were trying to simulate a small town with a low population density. This is supposed to represent 1000 people in a town that is 36 million square feet or about 1.3 square miles. Since the population density is so low, it is extremely unlikely for two people to come in close enough contact to contract Covid-19 in our simulation. Our simulation does have its limitations and this may not be realistic. Our simulator is assuming every person is independent and randomly moves around from day to day. This doesn't account for hanging out with friends or going home to your family which are common situations where contracting Covid-19 is much more likely. Accounting for these factors might be possible, but its beyond the scope of this project. In our third simulation, we used a bootstrap confidence interval for an infection distance of about 60 feet. This distance was finally large enough that people still got infected despite the low population density. Based on the plot, the number of infected people will peak around 50 days and then slowly decrease as the majority of people start to recover and gain immunity. This simulation looks more realistic and follows the infection trend that viruses generally have. 
 
 Compare different vaccination rates
 ```{r}
@@ -320,28 +321,32 @@ plot_dat1 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat1[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat1[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat1[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:51, y=plot_dat1[ ,3]), linetype = 2, color = 'red') + 
+  labs(x="Day", y="People infected")
 
 plot_dat2 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.5)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat2[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat2[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat2[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:51, y=plot_dat2[ ,3]), linetype = 2, color = 'red') + 
+  labs(x="Day", y="People infected")
 
 plot_dat3 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.8)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat3[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat3[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat3[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:51, y=plot_dat3[ ,3]), linetype = 2, color = 'red') + 
+  labs(x="Day", y="People infected")
 
 plot_dat4 <- get_bootstrap_cis(days=50, num_subjects=200, x_dim=1, y_dim=1, I_0=1, inf_dist=0.1, sample_size=20, prop_vac = 0.95)
 
 ggplot() +
   geom_line(aes(x=1:51, y=plot_dat4[ ,1]), linetype = 2, color = 'red') +
   geom_line(aes(x=1:51, y=plot_dat4[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat4[ ,3]), linetype = 2, color = 'red')
+  geom_line(aes(x=1:51, y=plot_dat4[ ,3]), linetype = 2, color = 'red') + 
+  labs(x="Day", y="People infected")
 
 
 #plot all vaccine curves
@@ -349,14 +354,21 @@ ggplot() +
   geom_line(aes(x=1:51, y=plot_dat1[ ,2])) +
   geom_line(aes(x=1:51, y=plot_dat2[ ,2]), color='red') +
   geom_line(aes(x=1:51, y=plot_dat3[ ,2]), color='blue') +
-  geom_line(aes(x=1:51, y=plot_dat4[ ,2]), color='green')
-
+  geom_line(aes(x=1:51, y=plot_dat4[ ,2]), color='green') + 
+  labs(x="Day", y="People infected")
 
 ```
 
+In the previous three simulations we assumed that no one was vaccinated, but we also wanted to look at how a vaccine would effect the spread of Covid-19. In these simulations we looked at 200 people with the same dimension parameters as before, but with only one person initially infected. We increased the infection distance since 200 people in a 1.3 square mile area is an even lower population density than before. All the parameters were held the same other than the vaccination rate for these simulations. The vaccine rates of the four examples were: 0, .5, .8, and .95. In the plot that shows the number of infected for each vaccination rate, black is 0 vaccinated, red is .5, blue is .8, and green is .95. As we would expect, when no one is vaccinated, the number of infected people peaks and falls much faster than when some people are vaccinated. It only took around 15 days to peak and nearly everyone was recovered by day 30. When no one was vaccinated it took much less time to get sick, but people also were recovered faster because everyone already had the virus. This is the idea of herd immunity that is often talked about, but it poses a massive problem with the hospitals. If everyone gets sick in a short period of time, hospitals can get overwhelmed and the death tolls can skyrocket due to lack of equipment and staff. Vaccinations aren't perfect, but they can help flatten the curve so the infection numbers don't peak as fast and also reduce the severity of the symptoms so less people need to be hospitalized. It is still possible to contract Covid-19 while vaccinated, but it is much less likely. As you can see in the last plot, as the vaccination rate increased, the longer it took for the cases to peak. The peak was also much lower than when no one was vaccinated and it took longer for the cases to completely disappear since people were being infected slower. This shows that a higher vaccination rate helps slow down the spread of Covid-19 even if it can't completely prevent it.
 
 Bibliography:
 
-[1] S. Maltezos and A. Georgakopoulou, “Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics,” Infection, Genetics and Evolution, vol. 92, p. 104896, 2021, doi: https://doi.org/10.1016/j.meegid.2021.104896.
+[1] Maltezos, S., & Georgakopoulou, A. (2021). Novel approach for Monte Carlo simulation of the new COVID-19 spread dynamics. Infection, Genetics and Evolution, 92, 104896. https://doi.org/10.1016/j.meegid.2021.104896
 
-[2] Lauer SA, Grantz KH, Bi Q, Jones FK, Zheng Q, Meredith HR, Azman AS, Reich NG, Lessler J. "The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application." Ann Intern Med. 2020 May 5;172(9):577-582. doi: 10.7326/M20-0504. Epub 2020 Mar 10. PMID: 32150748; PMCID: PMC7081172.
+[2] Lauer, S. A., Grantz, K. H., Bi, Q., Jones, F. K., Zheng, Q., Meredith, H. R., Azman, A. S., Reich, N. G., & Lessler, J. (2020). The Incubation Period of Coronavirus Disease 2019 (COVID-19) From Publicly Reported Confirmed Cases: Estimation and Application. Annals of internal medicine, 172(9), 577–582. https://doi.org/10.7326/M20-0504
+
+[3] H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+
+[4] H. Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+
+[5] Angelo Canty and Brian Ripley (2021). boot: Bootstrap R (S-Plus) Functions. R package version 1.3-28., Davison, A. C. & Hinkley, D. V. (1997) Bootstrap Methods and Their Applications. Cambridge University Press, Cambridge. ISBN 0-521-57391-2
