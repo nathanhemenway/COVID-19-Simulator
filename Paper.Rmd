@@ -305,9 +305,9 @@ ggplot() +
 plot_dat <- get_bootstrap_cis(days=150, num_subjects=1000, x_dim=1, y_dim=1, I_0=5, inf_dist=0.01, sample_size=20, prop_vac = 0)
 
 ggplot() +
-  geom_line(aes(x=1:51, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
-  geom_line(aes(x=1:51, y=plot_dat[ ,2])) +
-  geom_line(aes(x=1:51, y=plot_dat[ ,3]), linetype = 2, color = 'red') + 
+  geom_line(aes(x=1:151, y=plot_dat[ ,1]), linetype = 2, color = 'red') +
+  geom_line(aes(x=1:151, y=plot_dat[ ,2])) +
+  geom_line(aes(x=1:151, y=plot_dat[ ,3]), linetype = 2, color = 'red') + 
   labs(x="Day", y="People infected")
 
 ```
