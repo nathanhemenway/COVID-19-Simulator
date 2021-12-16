@@ -1,10 +1,10 @@
 # project-1
 Group 1 Project for STAT400 @ CSU
 
-To run the code:
+To run the code in Paper.Rmd:
 
-1.) Run the libraries, install if necessary
+1.) Load the libraries, install if necessary
 
-2.) Run the entire first block. Lines 15-230 are us setting up the functions. Lines 231-245 are setting up the testing parameters, you can change these and play around with it. Lines 247-291 will create the plots for the simulation.
+2.) Run the entire first code chunk. Lines 14-260 set up the functions. 
 
-3) The last code chunk will look at each day an whether the people were susceptible, infected, or recovered.
+3) The last two code chunks give plots for different mean crucial distances and vaccination rates, respectively. These can take some time to run, especially the first chunk.
